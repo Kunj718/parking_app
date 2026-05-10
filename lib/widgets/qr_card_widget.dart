@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../theme/app_theme.dart';
-import '../models/mock_data.dart';
+import '../state/app_state.dart';
 
 class QrCardWidget extends StatelessWidget {
-  final Resident resident;
+  final UserProfile profile;
 
-  const QrCardWidget({super.key, required this.resident});
+  const QrCardWidget({super.key, required this.profile});
 
   @override
   Widget build(BuildContext context) {
@@ -154,7 +154,7 @@ class QrCardWidget extends StatelessWidget {
         ],
       ),
       child: QrImageView(
-        data: resident.qrData,
+        data: profile.qrData,
         version: QrVersions.auto,
         size: 180,
         eyeStyle: const QrEyeStyle(
@@ -178,7 +178,7 @@ class QrCardWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                resident.name,
+                profile.name,
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -187,7 +187,7 @@ class QrCardWidget extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '${resident.tower} · Flat ${resident.flatNumber}',
+                '${profile.tower} · Flat ${profile.flatNumber}',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   color: AppColors.textSecondary,
@@ -203,7 +203,7 @@ class QrCardWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
-            resident.flatNumber,
+            profile.flatNumber,
             style: GoogleFonts.poppins(
               fontSize: 13,
               fontWeight: FontWeight.w700,

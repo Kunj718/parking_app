@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
-import '../models/mock_data.dart';
+import '../state/app_state.dart';
 
 class QuickActionCard extends StatelessWidget {
-  final Vehicle vehicle;
+  final VehicleProfile vehicle;
   final VoidCallback onAddGuest;
 
   const QuickActionCard({

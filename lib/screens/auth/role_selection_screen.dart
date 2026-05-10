@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
-import '../../navigation/main_navigation.dart';
+import 'phone_auth_screen.dart';
 
 class RoleSelectionScreen extends StatefulWidget {
   const RoleSelectionScreen({super.key});
@@ -25,7 +25,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             children: [
               const SizedBox(height: 48),
               _header(),
-              const SizedBox(height: 48),
+              const SizedBox(height: 25),
               _RoleCard(
                 role: 'resident',
                 title: 'Resident',
@@ -99,9 +99,10 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
   void _proceed() {
     if (_selectedRole == null) return;
-    Navigator.of(context).pushReplacement(
+    // Role selection only happens once — then push phone auth
+    Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => MainNavigation(role: _selectedRole!),
+        builder: (_) => PhoneAuthScreen(role: _selectedRole!),
       ),
     );
   }

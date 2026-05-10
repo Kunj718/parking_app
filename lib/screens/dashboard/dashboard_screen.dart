@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../models/mock_data.dart';
+import '../../state/app_state.dart';
 import '../../widgets/qr_card_widget.dart';
 import '../../widgets/quick_action_card.dart';
 import '../../widgets/guest_entry_modal.dart';
@@ -13,43 +14,52 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resident = MockData.currentResident;
-    final primaryVehicle = resident.vehicles.firstWhere(
-      (v) => v.isPrimary,
-      orElse: () => resident.vehicles.first,
-    );
+    final profile = AppState.instance.currentUser;
+    if (profile == null) {
+      return const Scaffold(
+        backgroundColor: AppColors.darkBg,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.electricBlue),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.darkBg,
       body: CustomScrollView(
         slivers: [
-          _AppBar(resident: resident),
+          _AppBar(profile: profile),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 const SizedBox(height: 8),
-                _StatRow(),
+                _StatRow(vehicleCount: profile.vehicles.length),
                 const SizedBox(height: 24),
-                QuickActionCard(
-                  vehicle: primaryVehicle,
-                  onAddGuest: () => GuestEntryModal.show(context),
-                ),
+                if (profile.vehicles.isNotEmpty)
+                  QuickActionCard(
+                    vehicle: profile.vehicles.first,
+                    onAddGuest: () => GuestEntryModal.show(context),
+                  )
+                else
+                  _NoVehicleBanner(onAddGuest: () => GuestEntryModal.show(context)),
                 const SizedBox(height: 24),
-                _SectionHeader(title: 'My Parking QR', action: 'Manage'),
+                _SectionHeader(title: 'My Parking QR', action: 'Share'),
                 const SizedBox(height: 12),
-                QrCardWidget(resident: resident),
+                QrCardWidget(profile: profile),
                 const SizedBox(height: 16),
                 QrCardActions(),
                 const SizedBox(height: 24),
-                _SectionHeader(title: 'My Vehicles', action: 'Add'),
-                const SizedBox(height: 12),
-                ...resident.vehicles.map(
-                  (v) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _VehicleTile(vehicle: v),
+                if (profile.vehicles.isNotEmpty) ...[
+                  _SectionHeader(title: 'My Vehicles', action: 'Add'),
+                  const SizedBox(height: 12),
+                  ...profile.vehicles.map(
+                    (v) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _VehicleTile(vehicle: v, isPrimary: profile.vehicles.indexOf(v) == 0),
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 100),
               ]),
             ),
@@ -61,9 +71,16 @@ class DashboardScreen extends StatelessWidget {
 }
 
 class _AppBar extends StatelessWidget {
-  final Resident resident;
+  final UserProfile profile;
 
-  const _AppBar({required this.resident});
+  const _AppBar({required this.profile});
+
+  String get _greeting {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning,';
+    if (hour < 17) return 'Good afternoon,';
+    return 'Good evening,';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,14 +99,14 @@ class _AppBar extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Good morning,',
+                  _greeting,
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     color: AppColors.textSecondary,
                   ),
                 ),
                 Text(
-                  resident.name.split(' ').first,
+                  profile.name.split(' ').first,
                   style: GoogleFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
@@ -101,7 +118,7 @@ class _AppBar extends StatelessWidget {
             const Spacer(),
             _NotificationBell(),
             const SizedBox(width: 12),
-            _Avatar(name: resident.name),
+            _Avatar(name: profile.name),
           ],
         ),
       ),
@@ -158,7 +175,7 @@ class _Avatar extends StatelessWidget {
       ),
       child: Center(
         child: Text(
-          name.substring(0, 1),
+          name.isNotEmpty ? name[0].toUpperCase() : '?',
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -171,6 +188,10 @@ class _Avatar extends StatelessWidget {
 }
 
 class _StatRow extends StatelessWidget {
+  final int vehicleCount;
+
+  const _StatRow({required this.vehicleCount});
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -187,7 +208,7 @@ class _StatRow extends StatelessWidget {
         Expanded(
           child: _StatCard(
             label: 'My Vehicles',
-            value: '${MockData.currentResident.vehicles.length}',
+            value: '$vehicleCount',
             icon: Icons.directions_car_rounded,
             color: AppColors.emerald,
           ),
@@ -254,6 +275,64 @@ class _StatCard extends StatelessWidget {
   }
 }
 
+class _NoVehicleBanner extends StatelessWidget {
+  final VoidCallback onAddGuest;
+
+  const _NoVehicleBanner({required this.onAddGuest});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.darkCard,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.electricBlue.withOpacity(0.3),
+          style: BorderStyle.solid,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppColors.electricBlue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.add_rounded,
+                color: AppColors.electricBlue, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'No Vehicle Linked',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  'Add a vehicle from Settings to use the full features.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String action;
@@ -290,12 +369,17 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _VehicleTile extends StatelessWidget {
-  final Vehicle vehicle;
+  final VehicleProfile vehicle;
+  final bool isPrimary;
 
-  const _VehicleTile({required this.vehicle});
+  const _VehicleTile({required this.vehicle, required this.isPrimary});
 
   @override
   Widget build(BuildContext context) {
+    final isBike = vehicle.type == 'bike' ||
+        vehicle.model.toLowerCase().contains('enfield') ||
+        vehicle.model.toLowerCase().contains('bike');
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -313,10 +397,7 @@ class _VehicleTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              vehicle.model.toLowerCase().contains('enfield') ||
-                      vehicle.model.toLowerCase().contains('bike')
-                  ? Icons.two_wheeler_rounded
-                  : Icons.directions_car_rounded,
+              isBike ? Icons.two_wheeler_rounded : Icons.directions_car_rounded,
               color: AppColors.electricBlue,
               size: 22,
             ),
@@ -335,20 +416,19 @@ class _VehicleTile extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  vehicle.plateNumber,
+                  '${vehicle.plateNumber} · ${vehicle.color}',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     color: AppColors.textSecondary,
-                    letterSpacing: 1,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
             ),
           ),
-          if (vehicle.isPrimary)
+          if (isPrimary)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: AppColors.electricBlue.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(8),

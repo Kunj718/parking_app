@@ -1,0 +1,1259 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import '../../theme/app_theme.dart';
+import '../../state/app_state.dart';
+import '../../navigation/main_navigation.dart';
+
+class ProfileSetupScreen extends StatefulWidget {
+  final String phone;
+  final String role;
+
+  const ProfileSetupScreen({
+    super.key,
+    required this.phone,
+    required this.role,
+  });
+
+  @override
+  State<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
+}
+
+class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
+  final _pageController = PageController();
+  int _currentStep = 0;
+  bool _isSubmitting = false;
+
+  // Step 1 — Personal Info
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+
+  // Step 2 — Society Details
+  String _selectedTower = 'Tower A';
+  final _flatController = TextEditingController();
+  final _parkingSlotController = TextEditingController();
+  final _towers = ['Tower A', 'Tower B', 'Tower C', 'Tower D', 'Wing 1', 'Wing 2'];
+
+  // Step 3 — Vehicle
+  bool _hasVehicle = false;
+  String _vehicleType = 'car';
+  final _plateController = TextEditingController();
+  final _modelController = TextEditingController();
+  String _selectedColor = 'White';
+  final _colors = ['White', 'Black', 'Silver', 'Grey', 'Red', 'Blue', 'Green', 'Orange'];
+
+  // Step 4 — QR Generated
+  UserProfile? _generatedProfile;
+
+  static const _totalSteps = 3;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    _flatController.dispose();
+    _parkingSlotController.dispose();
+    _plateController.dispose();
+    _modelController.dispose();
+    super.dispose();
+  }
+
+  void _nextStep() {
+    if (_currentStep == 0 && _nameController.text.trim().isEmpty) {
+      _showError('Please enter your full name.');
+      return;
+    }
+    if (_currentStep == 1 && _flatController.text.trim().isEmpty) {
+      _showError('Please enter your flat number.');
+      return;
+    }
+    if (_currentStep == 2) {
+      _submit();
+      return;
+    }
+    setState(() => _currentStep++);
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _prevStep() {
+    if (_currentStep == 0) return;
+    setState(() => _currentStep--);
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: GoogleFonts.inter(color: Colors.white)),
+        backgroundColor: AppColors.danger,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    setState(() => _isSubmitting = true);
+
+    // Build profile
+    final vehicles = <VehicleProfile>[];
+    if (_hasVehicle && _plateController.text.trim().isNotEmpty) {
+      vehicles.add(VehicleProfile(
+        plateNumber: _plateController.text.trim().toUpperCase(),
+        model: _modelController.text.trim().isEmpty
+            ? 'Vehicle'
+            : _modelController.text.trim(),
+        color: _selectedColor,
+        type: _vehicleType,
+      ));
+    }
+
+    final profile = UserProfile(
+      id: 'RES${DateTime.now().millisecondsSinceEpoch}',
+      name: _nameController.text.trim(),
+      phone: widget.phone,
+      flatNumber: _flatController.text.trim(),
+      tower: _selectedTower,
+      email: _emailController.text.trim().isEmpty
+          ? null
+          : _emailController.text.trim(),
+      role: widget.role,
+      vehicles: vehicles,
+    );
+
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (!mounted) return;
+
+    AppState.instance
+      ..currentUser = profile
+      ..isLoggedIn = true;
+
+    setState(() {
+      _generatedProfile = profile;
+      _isSubmitting = false;
+      _currentStep = _totalSteps;
+    });
+
+    _pageController.animateToPage(
+      _totalSteps,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.darkBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _TopBar(
+              currentStep: _currentStep,
+              totalSteps: _totalSteps,
+              onBack: _currentStep > 0 && _currentStep < _totalSteps
+                  ? _prevStep
+                  : null,
+            ),
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _Step1PersonalInfo(
+                    nameController: _nameController,
+                    emailController: _emailController,
+                    phone: widget.phone,
+                  ),
+                  _Step2SocietyDetails(
+                    selectedTower: _selectedTower,
+                    towers: _towers,
+                    flatController: _flatController,
+                    parkingSlotController: _parkingSlotController,
+                    onTowerChanged: (v) => setState(() => _selectedTower = v),
+                  ),
+                  _Step3Vehicle(
+                    hasVehicle: _hasVehicle,
+                    vehicleType: _vehicleType,
+                    plateController: _plateController,
+                    modelController: _modelController,
+                    selectedColor: _selectedColor,
+                    colors: _colors,
+                    onHasVehicleChanged: (v) => setState(() => _hasVehicle = v),
+                    onTypeChanged: (v) => setState(() => _vehicleType = v),
+                    onColorChanged: (v) => setState(() => _selectedColor = v),
+                  ),
+                  _Step4QrGenerated(
+                    profile: _generatedProfile,
+                    isLoading: _isSubmitting,
+                    onContinue: () {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              MainNavigation(role: widget.role),
+                        ),
+                        (_) => false,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            if (_currentStep < _totalSteps)
+              _BottomActionBar(
+                currentStep: _currentStep,
+                totalSteps: _totalSteps,
+                isSubmitting: _isSubmitting,
+                onNext: _nextStep,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Top Progress Bar ────────────────────────────────────────────────────────
+
+class _TopBar extends StatelessWidget {
+  final int currentStep;
+  final int totalSteps;
+  final VoidCallback? onBack;
+
+  const _TopBar({
+    required this.currentStep,
+    required this.totalSteps,
+    this.onBack,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = currentStep >= totalSteps
+        ? 1.0
+        : (currentStep + 1) / totalSteps;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              if (onBack != null)
+                GestureDetector(
+                  onTap: onBack,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.darkCard,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.darkBorder),
+                    ),
+                    child: const Icon(Icons.arrow_back_rounded,
+                        color: AppColors.textSecondary, size: 18),
+                  ),
+                )
+              else
+                const SizedBox(width: 36),
+              const Spacer(),
+              if (currentStep < totalSteps)
+                Text(
+                  'Step ${currentStep + 1} of $totalSteps',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              const Spacer(),
+              const SizedBox(width: 36),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (currentStep < totalSteps) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 4,
+                backgroundColor: AppColors.darkBorder,
+                valueColor: const AlwaysStoppedAnimation(AppColors.electricBlue),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Step 1: Personal Info ────────────────────────────────────────────────────
+
+class _Step1PersonalInfo extends StatelessWidget {
+  final TextEditingController nameController;
+  final TextEditingController emailController;
+  final String phone;
+
+  const _Step1PersonalInfo({
+    required this.nameController,
+    required this.emailController,
+    required this.phone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _StepIcon(icon: Icons.person_rounded, gradient: AppColors.blueGradient),
+          const SizedBox(height: 24),
+          Text(
+            'About You',
+            style: GoogleFonts.poppins(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'This info will appear on your parking QR.',
+            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 32),
+          _FormLabel(label: 'Full Name'),
+          const SizedBox(height: 8),
+          _StyledTextField(
+            controller: nameController,
+            hint: 'e.g. Arjun Mehta',
+            icon: Icons.person_outline_rounded,
+            textCapitalization: TextCapitalization.words,
+          ),
+          const SizedBox(height: 20),
+          _FormLabel(label: 'Email Address'),
+          const SizedBox(height: 8),
+          _StyledTextField(
+            controller: emailController,
+            hint: 'Optional',
+            icon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: 20),
+          _FormLabel(label: 'Mobile Number'),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppColors.darkCard,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.darkBorder),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.phone_android_rounded,
+                    color: AppColors.textMuted, size: 20),
+                const SizedBox(width: 12),
+                Text(
+                  phone,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    color: AppColors.textSecondary,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.emerald.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Verified',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.emerald,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Step 2: Society Details ──────────────────────────────────────────────────
+
+class _Step2SocietyDetails extends StatelessWidget {
+  final String selectedTower;
+  final List<String> towers;
+  final TextEditingController flatController;
+  final TextEditingController parkingSlotController;
+  final ValueChanged<String> onTowerChanged;
+
+  const _Step2SocietyDetails({
+    required this.selectedTower,
+    required this.towers,
+    required this.flatController,
+    required this.parkingSlotController,
+    required this.onTowerChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _StepIcon(icon: Icons.apartment_rounded, gradient: AppColors.emeraldGradient),
+          const SizedBox(height: 24),
+          Text(
+            'Your Home',
+            style: GoogleFonts.poppins(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Guards use this to verify which flat you belong to.',
+            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 32),
+          _FormLabel(label: 'Tower / Wing'),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.darkCard,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.darkBorder),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: ButtonTheme(
+                alignedDropdown: true,
+                child: DropdownButton<String>(
+                  value: selectedTower,
+                  isExpanded: true,
+                  borderRadius: BorderRadius.circular(14),
+                  dropdownColor: AppColors.darkCard,
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textSecondary),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  items: towers
+                      .map((t) => DropdownMenuItem(
+                            value: t,
+                            child: Text(
+                              t,
+                              style: GoogleFonts.poppins(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ))
+                      .toList(),
+                  onChanged: (v) {
+                    if (v != null) onTowerChanged(v);
+                  },
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          _FormLabel(label: 'Flat Number'),
+          const SizedBox(height: 8),
+          _StyledTextField(
+            controller: flatController,
+            hint: 'e.g. 704 or B-12',
+            icon: Icons.home_outlined,
+            textCapitalization: TextCapitalization.characters,
+          ),
+          const SizedBox(height: 20),
+          _FormLabel(label: 'Parking Slot'),
+          const SizedBox(height: 8),
+          _StyledTextField(
+            controller: parkingSlotController,
+            hint: 'e.g. P1-045 (optional)',
+            icon: Icons.local_parking_rounded,
+            textCapitalization: TextCapitalization.characters,
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.electricBlue.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.electricBlue.withOpacity(0.2)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline_rounded,
+                    color: AppColors.electricBlue, size: 16),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Your flat number will be visible to guards when they scan your QR.',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppColors.electricBlueLight,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Step 3: Vehicle Details ──────────────────────────────────────────────────
+
+class _Step3Vehicle extends StatelessWidget {
+  final bool hasVehicle;
+  final String vehicleType;
+  final TextEditingController plateController;
+  final TextEditingController modelController;
+  final String selectedColor;
+  final List<String> colors;
+  final ValueChanged<bool> onHasVehicleChanged;
+  final ValueChanged<String> onTypeChanged;
+  final ValueChanged<String> onColorChanged;
+
+  const _Step3Vehicle({
+    required this.hasVehicle,
+    required this.vehicleType,
+    required this.plateController,
+    required this.modelController,
+    required this.selectedColor,
+    required this.colors,
+    required this.onHasVehicleChanged,
+    required this.onTypeChanged,
+    required this.onColorChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _StepIcon(
+            icon: Icons.directions_car_rounded,
+            gradient: [const Color(0xFF7C4DFF), const Color(0xFF512DA8)],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Your Vehicle',
+            style: GoogleFonts.poppins(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Link your vehicle to your parking pass.',
+            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 32),
+          // Has vehicle toggle
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'I own a vehicle',
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Switch(
+                value: hasVehicle,
+                onChanged: onHasVehicleChanged,
+                activeColor: AppColors.electricBlue,
+                activeTrackColor: AppColors.electricBlue.withOpacity(0.3),
+                inactiveThumbColor: AppColors.textMuted,
+                inactiveTrackColor: AppColors.darkBorder,
+              ),
+            ],
+          ),
+          if (hasVehicle) ...[
+            const SizedBox(height: 24),
+            _FormLabel(label: 'Vehicle Type'),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _TypeChip(
+                    label: 'Car',
+                    icon: Icons.directions_car_rounded,
+                    selected: vehicleType == 'car',
+                    onTap: () => onTypeChanged('car'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _TypeChip(
+                    label: 'Bike',
+                    icon: Icons.two_wheeler_rounded,
+                    selected: vehicleType == 'bike',
+                    onTap: () => onTypeChanged('bike'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _FormLabel(label: 'Number Plate'),
+            const SizedBox(height: 8),
+            _StyledTextField(
+              controller: plateController,
+              hint: 'e.g. MH 02 AB 1234',
+              icon: Icons.credit_card_rounded,
+              textCapitalization: TextCapitalization.characters,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9 ]')),
+                LengthLimitingTextInputFormatter(13),
+              ],
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: 3,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _FormLabel(label: 'Make & Model'),
+            const SizedBox(height: 8),
+            _StyledTextField(
+              controller: modelController,
+              hint: 'e.g. Honda City',
+              icon: Icons.drive_eta_rounded,
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 20),
+            _FormLabel(label: 'Vehicle Colour'),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: colors.map((c) {
+                final selected = c == selectedColor;
+                return GestureDetector(
+                  onTap: () => onColorChanged(c),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? AppColors.electricBlue
+                          : AppColors.darkCard,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: selected
+                            ? AppColors.electricBlue
+                            : AppColors.darkBorder,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: _colorFromName(c),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.3)),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          c,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: selected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color: selected
+                                ? Colors.white
+                                : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ] else ...[
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.darkCard,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.darkBorder),
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.no_transfer_rounded,
+                      color: AppColors.textMuted, size: 36),
+                  const SizedBox(height: 10),
+                  Text(
+                    'No vehicle linked',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  Text(
+                    'You can add one later from Settings.',
+                    style: GoogleFonts.inter(
+                        fontSize: 12, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _colorFromName(String name) {
+    switch (name.toLowerCase()) {
+      case 'white': return Colors.white;
+      case 'black': return const Color(0xFF212121);
+      case 'silver': return const Color(0xFFC0C0C0);
+      case 'grey': return Colors.grey;
+      case 'red': return Colors.red;
+      case 'blue': return Colors.blue;
+      case 'green': return Colors.green;
+      case 'orange': return Colors.orange;
+      default: return AppColors.electricBlue;
+    }
+  }
+}
+
+// ─── Step 4: QR Generated ─────────────────────────────────────────────────────
+
+class _Step4QrGenerated extends StatelessWidget {
+  final UserProfile? profile;
+  final bool isLoading;
+  final VoidCallback onContinue;
+
+  const _Step4QrGenerated({
+    required this.profile,
+    required this.isLoading,
+    required this.onContinue,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading || profile == null) {
+      return _LoadingState();
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+      child: Column(
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              gradient:
+                  const LinearGradient(colors: AppColors.emeraldGradient),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.emerald.withOpacity(0.4),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.check_rounded,
+                color: Colors.white, size: 36),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Your QR is Ready!',
+            style: GoogleFonts.poppins(
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Print this and stick it on your car dashboard or gate pass.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 28),
+          // QR Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1E2A60), Color(0xFF0D1442)],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.darkBorder),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.electricBlue.withOpacity(0.2),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                            colors: AppColors.blueGradient),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.local_parking_rounded,
+                          color: Colors.white, size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'ParkQR · Society Pass',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // QR code
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: QrImageView(
+                    data: profile!.qrData,
+                    version: QrVersions.auto,
+                    size: 160,
+                    eyeStyle: const QrEyeStyle(
+                      eyeShape: QrEyeShape.square,
+                      color: AppColors.deepNavy,
+                    ),
+                    dataModuleStyle: const QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.square,
+                      color: AppColors.navyMid,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  profile!.name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  '${profile!.tower} · Flat ${profile!.flatNumber}',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                if (profile!.vehicles.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.electricBlue.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      profile!.vehicles.first.plateNumber,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.electricBlueLight,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Info
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.warningDim,
+              borderRadius: BorderRadius.circular(14),
+              border:
+                  Border.all(color: AppColors.warning.withOpacity(0.3)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.print_rounded,
+                    color: AppColors.warning, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Print this QR and keep it with your vehicle. Guards and residents can scan it to see your details.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppColors.warning,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
+          // Continue button
+          GestureDetector(
+            onTap: onContinue,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              decoration: BoxDecoration(
+                gradient:
+                    const LinearGradient(colors: AppColors.blueGradient),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.electricBlue.withOpacity(0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  'Open the App →',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          GestureDetector(
+            onTap: () {},
+            child: Text(
+              'Download / Print QR',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.electricBlue,
+              ),
+            ),
+          ),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoadingState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 64,
+            height: 64,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: const AlwaysStoppedAnimation(AppColors.electricBlue),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Generating your QR...',
+            style: GoogleFonts.poppins(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Setting up your parking pass',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Shared Widgets ───────────────────────────────────────────────────────────
+
+class _StepIcon extends StatelessWidget {
+  final IconData icon;
+  final List<Color> gradient;
+
+  const _StepIcon({required this.icon, required this.gradient});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: gradient),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: gradient.first.withOpacity(0.35),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Icon(icon, color: Colors.white, size: 26),
+    );
+  }
+}
+
+class _FormLabel extends StatelessWidget {
+  final String label;
+
+  const _FormLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label.toUpperCase(),
+      style: GoogleFonts.poppins(
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textSecondary,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+}
+
+class _StyledTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
+  final TextCapitalization textCapitalization;
+  final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final TextStyle? style;
+
+  const _StyledTextField({
+    required this.controller,
+    required this.hint,
+    required this.icon,
+    this.textCapitalization = TextCapitalization.none,
+    this.keyboardType = TextInputType.text,
+    this.inputFormatters,
+    this.style,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      textCapitalization: textCapitalization,
+      inputFormatters: inputFormatters,
+      style: style ??
+          GoogleFonts.inter(
+            fontSize: 15,
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
+      ),
+    );
+  }
+}
+
+class _TypeChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TypeChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          gradient: selected
+              ? const LinearGradient(colors: AppColors.blueGradient)
+              : null,
+          color: selected ? null : AppColors.darkCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? AppColors.electricBlue : AppColors.darkBorder,
+            width: selected ? 1.5 : 1,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: AppColors.electricBlue.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon,
+                color: selected ? Colors.white : AppColors.textSecondary,
+                size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: selected ? Colors.white : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomActionBar extends StatelessWidget {
+  final int currentStep;
+  final int totalSteps;
+  final bool isSubmitting;
+  final VoidCallback onNext;
+
+  const _BottomActionBar({
+    required this.currentStep,
+    required this.totalSteps,
+    required this.isSubmitting,
+    required this.onNext,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isLast = currentStep == totalSteps - 1;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+          24, 16, 24, 16 + MediaQuery.of(context).padding.bottom),
+      decoration: BoxDecoration(
+        color: AppColors.darkBg,
+        border: const Border(top: BorderSide(color: AppColors.darkDivider)),
+      ),
+      child: GestureDetector(
+        onTap: isSubmitting ? null : onNext,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: AppColors.blueGradient),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.electricBlue.withOpacity(0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Center(
+            child: isSubmitting
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2.5, color: Colors.white),
+                  )
+                : Text(
+                    isLast ? 'Create My Pass' : 'Continue',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}

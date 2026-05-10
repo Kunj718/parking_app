@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
-import '../../models/mock_data.dart';
+import '../../state/app_state.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -17,7 +17,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final resident = MockData.currentResident;
+    final resident = AppState.instance.currentUser ??
+        const UserProfile(
+          id: '',
+          name: 'User',
+          phone: '',
+          flatNumber: '-',
+          tower: '-',
+          role: 'resident',
+          vehicles: [],
+        );
 
     return Scaffold(
       backgroundColor: AppColors.darkBg,
@@ -140,7 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 }
 
 class _ProfileCard extends StatelessWidget {
-  final Resident resident;
+  final UserProfile resident;
 
   const _ProfileCard({required this.resident});
 

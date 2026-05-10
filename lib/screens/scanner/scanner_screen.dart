@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
-import '../../models/mock_data.dart';
+import '../../state/app_state.dart';
 import '../../widgets/scanner_overlay_painter.dart';
 import '../../widgets/license_plate_widget.dart';
 
@@ -27,7 +27,8 @@ class _ScannerScreenState extends State<ScannerScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat();
-    _scanAnim = CurvedAnimation(parent: _scanController, curve: Curves.easeInOut);
+    _scanAnim =
+        CurvedAnimation(parent: _scanController, curve: Curves.easeInOut);
   }
 
   @override
@@ -36,7 +37,7 @@ class _ScannerScreenState extends State<ScannerScreen>
     super.dispose();
   }
 
-  void _simulateScan() async {
+  Future<void> _simulateScan() async {
     if (_isScanning || _isScanned) return;
     setState(() => _isScanning = true);
     await Future.delayed(const Duration(milliseconds: 1200));
@@ -51,6 +52,7 @@ class _ScannerScreenState extends State<ScannerScreen>
   }
 
   void _resetScan() {
+    if (!mounted) return;
     setState(() => _isScanned = false);
     _scanController.repeat();
   }
@@ -62,9 +64,7 @@ class _ScannerScreenState extends State<ScannerScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Simulated camera feed
           _SimulatedCamera(),
-          // Overlay
           AnimatedBuilder(
             animation: _scanAnim,
             builder: (_, __) => CustomPaint(
@@ -74,14 +74,27 @@ class _ScannerScreenState extends State<ScannerScreen>
               ),
             ),
           ),
-          // Top bar
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             left: 0,
             right: 0,
             child: _TopBar(),
           ),
-          // Bottom UI
+          if (!_isScanned)
+            Positioned(
+              top: MediaQuery.of(context).size.height / 2 - 40 + 145,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Text(
+                  'Point camera at a ParkQR code',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: Colors.white60,
+                  ),
+                ),
+              ),
+            ),
           Positioned(
             left: 0,
             right: 0,
@@ -93,55 +106,59 @@ class _ScannerScreenState extends State<ScannerScreen>
               onReset: _resetScan,
             ),
           ),
-          // Corner scan label
-          if (!_isScanned)
-            Positioned(
-              top: MediaQuery.of(context).size.height / 2 - 40 + 140,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Text(
-                  'Align QR code within the frame',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: Colors.white60,
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
   }
 
   void _showResultSheet() {
-    final resident = MockData.currentResident;
+    // Simulate reading the currently logged-in user's QR data
+    final currentUser = AppState.instance.currentUser;
+    ScannedProfile? scanned;
+
+    if (currentUser != null) {
+      scanned = UserProfile.parseQr(currentUser.qrData);
+    }
+
+    // Fallback demo profile if no real user exists
+    scanned ??= const ScannedProfile(
+      name: 'Arjun Mehta',
+      flatNumber: 'A-704',
+      tower: 'Tower A',
+      phone: '+91 98765 43210',
+      plateNumber: 'MH 02 AB 1234',
+      vehicleModel: 'Honda City',
+      vehicleColor: 'Pearl White',
+      vehicleType: 'car',
+    );
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       isDismissible: true,
-      builder: (_) => _ScanResultSheet(resident: resident, onClose: () {
-        Navigator.of(context).pop();
-        _resetScan();
-      }),
-    );
+      builder: (_) => _ScanResultSheet(
+        profile: scanned!,
+        onClose: () {
+          Navigator.of(context).pop();
+          _resetScan();
+        },
+      ),
+    ).whenComplete(_resetScan);
   }
 }
+
+// ─── Simulated Camera ─────────────────────────────────────────────────────────
 
 class _SimulatedCamera extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Simulated camera using gradient + noise overlay
     return Container(
       decoration: BoxDecoration(
         gradient: RadialGradient(
           center: const Alignment(0, -0.2),
           radius: 1.4,
-          colors: [
-            const Color(0xFF1A2040),
-            const Color(0xFF050810),
-          ],
+          colors: [const Color(0xFF1A2040), const Color(0xFF050810)],
         ),
       ),
       child: Opacity(
@@ -153,7 +170,7 @@ class _SimulatedCamera extends StatelessWidget {
             childAspectRatio: 1,
           ),
           itemCount: 400,
-          itemBuilder: (_, i) => Container(
+          itemBuilder: (_, __) => Container(
             decoration: BoxDecoration(
               border: Border.all(
                 color: Colors.white.withOpacity(0.1),
@@ -167,6 +184,8 @@ class _SimulatedCamera extends StatelessWidget {
   }
 }
 
+// ─── Top Bar ──────────────────────────────────────────────────────────────────
+
 class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -174,19 +193,7 @@ class _TopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () {},
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.15)),
-              ),
-              child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
-            ),
-          ),
+          _GlassButton(icon: Icons.close_rounded, onTap: () {}),
           const Spacer(),
           Text(
             'QR Scanner',
@@ -197,25 +204,38 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          GestureDetector(
-            onTap: () {},
-            child: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.15)),
-              ),
-              child: const Icon(Icons.flash_off_rounded,
-                  color: Colors.white, size: 20),
-            ),
-          ),
+          _GlassButton(icon: Icons.flash_off_rounded, onTap: () {}),
         ],
       ),
     );
   }
 }
+
+class _GlassButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _GlassButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.4),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.15)),
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    );
+  }
+}
+
+// ─── Bottom Panel ─────────────────────────────────────────────────────────────
 
 class _BottomPanel extends StatelessWidget {
   final bool isScanned;
@@ -292,10 +312,7 @@ class _BottomPanel extends StatelessWidget {
                 : isScanning
                     ? 'Reading QR code...'
                     : 'Tap to simulate scan',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: Colors.white60,
-            ),
+            style: GoogleFonts.inter(fontSize: 13, color: Colors.white60),
           ),
         ],
       ),
@@ -303,19 +320,16 @@ class _BottomPanel extends StatelessWidget {
   }
 }
 
+// ─── Scan Result Sheet ────────────────────────────────────────────────────────
+
 class _ScanResultSheet extends StatelessWidget {
-  final Resident resident;
+  final ScannedProfile profile;
   final VoidCallback onClose;
 
-  const _ScanResultSheet({required this.resident, required this.onClose});
+  const _ScanResultSheet({required this.profile, required this.onClose});
 
   @override
   Widget build(BuildContext context) {
-    final primaryVehicle = resident.vehicles.firstWhere(
-      (v) => v.isPrimary,
-      orElse: () => resident.vehicles.first,
-    );
-
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.darkCard,
@@ -327,6 +341,7 @@ class _ScanResultSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 12),
+          // Drag handle
           Center(
             child: Container(
               width: 40,
@@ -337,13 +352,14 @@ class _ScanResultSheet extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          // Success badge
+          const SizedBox(height: 20),
+          // Verified badge
           Container(
-            width: 64,
-            height: 64,
+            width: 60,
+            height: 60,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: AppColors.emeraldGradient),
+              gradient:
+                  const LinearGradient(colors: AppColors.emeraldGradient),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
@@ -353,26 +369,27 @@ class _ScanResultSheet extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.check_rounded, color: Colors.white, size: 32),
+            child: const Icon(Icons.verified_rounded,
+                color: Colors.white, size: 30),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
-            'Verified',
+            'Resident Verified',
             style: GoogleFonts.poppins(
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: FontWeight.w700,
               color: Colors.white,
             ),
           ),
           Text(
-            'Resident QR authenticated',
+            'Registered society member',
             style: GoogleFonts.inter(
               fontSize: 13,
               color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 28),
-          // Info card
+          const SizedBox(height: 24),
+          // Profile details card
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -384,31 +401,146 @@ class _ScanResultSheet extends StatelessWidget {
             ),
             child: Column(
               children: [
-                _InfoRow(label: 'Name', value: resident.name),
-                const SizedBox(height: 12),
-                _InfoRow(label: 'Flat', value: '${resident.tower} · ${resident.flatNumber}'),
-                const SizedBox(height: 12),
-                _InfoRow(label: 'Phone', value: resident.phone),
+                // Owner section header
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                            colors: AppColors.blueGradient),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          profile.name.isNotEmpty
+                              ? profile.name[0].toUpperCase()
+                              : '?',
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          profile.name,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          '${profile.tower} · Flat ${profile.flatNumber}',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 const Divider(color: AppColors.darkBorder, height: 1),
                 const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Registered Vehicle',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    LicensePlateWidget(plateNumber: primaryVehicle.plateNumber),
-                  ],
+                // Contact
+                _InfoRow(
+                  icon: Icons.phone_android_rounded,
+                  label: 'Mobile',
+                  value: profile.phone,
+                  valueColor: Colors.white,
                 ),
+                const SizedBox(height: 12),
+                _InfoRow(
+                  icon: Icons.apartment_rounded,
+                  label: 'Address',
+                  value: '${profile.tower}, Flat ${profile.flatNumber}',
+                  valueColor: Colors.white,
+                ),
+                if (profile.hasVehicle) ...[
+                  const SizedBox(height: 16),
+                  const Divider(color: AppColors.darkBorder, height: 1),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Icon(
+                        profile.vehicleType == 'bike'
+                            ? Icons.two_wheeler_rounded
+                            : Icons.directions_car_rounded,
+                        color: AppColors.electricBlue,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Registered Vehicle',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              profile.vehicleModel,
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              profile.vehicleColor,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      LicensePlateWidget(plateNumber: profile.plateNumber),
+                    ],
+                  ),
+                ] else ...[
+                  const SizedBox(height: 16),
+                  const Divider(color: AppColors.darkBorder, height: 1),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.no_transfer_rounded,
+                          color: AppColors.textMuted, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        'No vehicle registered',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(height: 20),
+          // Action buttons
           Row(
             children: [
               Expanded(
@@ -474,26 +606,37 @@ class _ScanResultSheet extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
+  final IconData icon;
   final String label;
   final String value;
+  final Color valueColor;
 
-  const _InfoRow({required this.label, required this.value});
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.valueColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
+        Icon(icon, size: 15, color: AppColors.textMuted),
+        const SizedBox(width: 8),
         Text(
-          label,
+          '$label: ',
           style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
         ),
-        Text(
-          value,
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
+        Expanded(
+          child: Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: valueColor,
+            ),
+            textAlign: TextAlign.end,
           ),
         ),
       ],

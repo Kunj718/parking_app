@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'theme/app_theme.dart';
+import 'state/app_state.dart';
 import 'screens/onboarding/onboarding_screen.dart';
+import 'screens/auth/phone_auth_screen.dart';
+import 'navigation/main_navigation.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,21 +20,24 @@ void main() {
   runApp(const ParkingApp());
 }
 
-class ParkingApp extends StatefulWidget {
+class ParkingApp extends StatelessWidget {
   const ParkingApp({super.key});
 
-  @override
-  State<ParkingApp> createState() => _ParkingAppState();
-}
+  Widget _resolveHome() {
+    final state = AppState.instance;
 
-class _ParkingAppState extends State<ParkingApp> {
-  ThemeMode _themeMode = ThemeMode.dark;
+    // Already logged in this session → go straight to app
+    if (state.isLoggedIn && state.currentUser != null) {
+      return MainNavigation(role: state.selectedRole);
+    }
 
-  void toggleTheme() {
-    setState(() {
-      _themeMode =
-          _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-    });
+    // Seen onboarding before but not logged in → phone auth
+    if (state.hasSeenOnboarding) {
+      return PhoneAuthScreen(role: state.selectedRole);
+    }
+
+    // Fresh install → show onboarding
+    return const OnboardingScreen();
   }
 
   @override
@@ -41,8 +47,8 @@ class _ParkingAppState extends State<ParkingApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: _themeMode,
-      home: const OnboardingScreen(),
+      themeMode: ThemeMode.dark,
+      home: _resolveHome(),
     );
   }
 }
