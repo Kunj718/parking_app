@@ -22,7 +22,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           id: '',
           name: 'User',
           phone: '',
-          flatNumber: '-',
+          homeNumber: '-',
           tower: '-',
           role: 'resident',
           vehicles: [],
@@ -156,32 +156,30 @@ class _ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1E2A60), Color(0xFF0D1442)],
-        ),
-        borderRadius: BorderRadius.circular(24),
+        color: AppColors.darkCard,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.darkBorder),
       ),
       child: Row(
         children: [
           Container(
-            width: 60,
-            height: 60,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: AppColors.blueGradient),
-              borderRadius: BorderRadius.circular(18),
+              color: AppColors.electricBlue.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                  color: AppColors.electricBlue.withValues(alpha: 0.2)),
             ),
             child: Center(
               child: Text(
                 resident.name.substring(0, 1),
                 style: GoogleFonts.poppins(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.electricBlue,
                 ),
               ),
             ),
@@ -200,27 +198,20 @@ class _ProfileCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${resident.tower} · Flat ${resident.flatNumber}',
+                  '${resident.tower} · ${resident.homeNumber}',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.emerald.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    resident.role.toUpperCase(),
-                    style: GoogleFonts.poppins(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.emerald,
-                      letterSpacing: 0.8,
-                    ),
+                const SizedBox(height: 4),
+                Text(
+                  resident.role.toUpperCase(),
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textMuted,
+                    letterSpacing: 0.6,
                   ),
                 ),
               ],
@@ -335,10 +326,9 @@ class _ToggleTile extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.electricBlue,
-            activeTrackColor: AppColors.electricBlue.withOpacity(0.3),
+            activeTrackColor: AppColors.electricBlue.withValues(alpha: 0.6),
             inactiveThumbColor: AppColors.textMuted,
-            inactiveTrackColor: AppColors.darkBorder,
+            inactiveTrackColor: AppColors.darkCardElevated,
           ),
         ],
       ),

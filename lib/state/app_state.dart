@@ -16,8 +16,9 @@ class UserProfile {
   final String id;
   final String name;
   final String phone;
-  final String flatNumber;
+  final String homeNumber;   // renamed from flatNumber — covers flats, houses, units
   final String tower;
+  final String? tenamentNo; // Tenament / Survey / Unit No. (optional)
   final String? email;
   final String role;
   final List<VehicleProfile> vehicles;
@@ -26,43 +27,48 @@ class UserProfile {
     required this.id,
     required this.name,
     required this.phone,
-    required this.flatNumber,
+    required this.homeNumber,
     required this.tower,
+    this.tenamentNo,
     this.email,
     required this.role,
     required this.vehicles,
   });
 
-  // Encodes full profile into QR data string
+  // ── QR encoding ────────────────────────────────────────────────────────────
+  // Format: PARKQR|id|name|homeNumber|tower|phone|tenamentNo|plate|model|color|type
   String get qrData {
     final v = vehicles.isNotEmpty ? vehicles.first : null;
     final plate = v?.plateNumber ?? 'NONE';
     final model = v?.model ?? 'NONE';
     final color = v?.color ?? 'NONE';
     final type = v?.type ?? 'NONE';
-    return 'PARKQR|$id|$name|$flatNumber|$tower|$phone|$plate|$model|$color|$type';
+    final tenament = tenamentNo?.isNotEmpty == true ? tenamentNo! : 'NONE';
+    return 'PARKQR|$id|$name|$homeNumber|$tower|$phone|$tenament|$plate|$model|$color|$type';
   }
 
   static ScannedProfile? parseQr(String data) {
     if (!data.startsWith('PARKQR|')) return null;
     final p = data.split('|');
-    if (p.length < 10) return null;
+    if (p.length < 11) return null;
     return ScannedProfile(
       name: p[2],
-      flatNumber: p[3],
+      homeNumber: p[3],
       tower: p[4],
       phone: p[5],
-      plateNumber: p[6],
-      vehicleModel: p[7],
-      vehicleColor: p[8],
-      vehicleType: p[9],
+      tenamentNo: p[6] == 'NONE' ? null : p[6],
+      plateNumber: p[7],
+      vehicleModel: p[8],
+      vehicleColor: p[9],
+      vehicleType: p[10],
     );
   }
 
   UserProfile copyWith({
     String? name,
-    String? flatNumber,
+    String? homeNumber,
     String? tower,
+    String? tenamentNo,
     String? email,
     List<VehicleProfile>? vehicles,
   }) {
@@ -70,8 +76,9 @@ class UserProfile {
       id: id,
       name: name ?? this.name,
       phone: phone,
-      flatNumber: flatNumber ?? this.flatNumber,
+      homeNumber: homeNumber ?? this.homeNumber,
       tower: tower ?? this.tower,
+      tenamentNo: tenamentNo ?? this.tenamentNo,
       email: email ?? this.email,
       role: role,
       vehicles: vehicles ?? this.vehicles,
@@ -81,9 +88,10 @@ class UserProfile {
 
 class ScannedProfile {
   final String name;
-  final String flatNumber;
+  final String homeNumber;
   final String tower;
   final String phone;
+  final String? tenamentNo;
   final String plateNumber;
   final String vehicleModel;
   final String vehicleColor;
@@ -91,9 +99,10 @@ class ScannedProfile {
 
   const ScannedProfile({
     required this.name,
-    required this.flatNumber,
+    required this.homeNumber,
     required this.tower,
     required this.phone,
+    this.tenamentNo,
     required this.plateNumber,
     required this.vehicleModel,
     required this.vehicleColor,
@@ -101,13 +110,13 @@ class ScannedProfile {
   });
 
   bool get hasVehicle => plateNumber != 'NONE';
+  bool get hasTenament => tenamentNo != null && tenamentNo!.isNotEmpty;
 }
 
 class AppState {
   static final AppState instance = AppState._();
   AppState._();
 
-  // Persists for the app session (no actual SharedPreferences — mock only)
   bool hasSeenOnboarding = false;
   bool isLoggedIn = false;
   String selectedRole = 'resident';

@@ -123,9 +123,10 @@ class _ScannerScreenState extends State<ScannerScreen>
     // Fallback demo profile if no real user exists
     scanned ??= const ScannedProfile(
       name: 'Arjun Mehta',
-      flatNumber: 'A-704',
+      homeNumber: 'A-704',
       tower: 'Tower A',
       phone: '+91 98765 43210',
+      tenamentNo: 'T-1234',
       plateNumber: 'MH 02 AB 1234',
       vehicleModel: 'Honda City',
       vehicleColor: 'Pearl White',
@@ -438,7 +439,7 @@ class _ScanResultSheet extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '${profile.tower} · Flat ${profile.flatNumber}',
+                          '${profile.tower} · ${profile.homeNumber}',
                           style: GoogleFonts.inter(
                             fontSize: 13,
                             color: AppColors.textSecondary,
@@ -462,9 +463,18 @@ class _ScanResultSheet extends StatelessWidget {
                 _InfoRow(
                   icon: Icons.apartment_rounded,
                   label: 'Address',
-                  value: '${profile.tower}, Flat ${profile.flatNumber}',
+                  value: '${profile.tower}, ${profile.homeNumber}',
                   valueColor: Colors.white,
                 ),
+                if (profile.hasTenament) ...[
+                  const SizedBox(height: 12),
+                  _InfoRow(
+                    icon: Icons.tag_rounded,
+                    label: 'Tenament No.',
+                    value: profile.tenamentNo!,
+                    valueColor: AppColors.electricBlueLight,
+                  ),
+                ],
                 if (profile.hasVehicle) ...[
                   const SizedBox(height: 16),
                   const Divider(color: AppColors.darkBorder, height: 1),

@@ -35,7 +35,7 @@ class DashboardScreen extends StatelessWidget {
               delegate: SliverChildListDelegate([
                 const SizedBox(height: 8),
                 _StatRow(vehicleCount: profile.vehicles.length),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 if (profile.vehicles.isNotEmpty)
                   QuickActionCard(
                     vehicle: profile.vehicles.first,
@@ -47,7 +47,7 @@ class DashboardScreen extends StatelessWidget {
                 _SectionHeader(title: 'My Parking QR', action: 'Share'),
                 const SizedBox(height: 12),
                 QrCardWidget(profile: profile),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 QrCardActions(),
                 const SizedBox(height: 24),
                 if (profile.vehicles.isNotEmpty) ...[
@@ -55,8 +55,11 @@ class DashboardScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   ...profile.vehicles.map(
                     (v) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _VehicleTile(vehicle: v, isPrimary: profile.vehicles.indexOf(v) == 0),
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _VehicleTile(
+                        vehicle: v,
+                        isPrimary: profile.vehicles.indexOf(v) == 0,
+                      ),
                     ),
                   ),
                 ],
@@ -69,6 +72,8 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 }
+
+// ── App bar ────────────────────────────────────────────────────────────────────
 
 class _AppBar extends StatelessWidget {
   final UserProfile profile;
@@ -101,15 +106,15 @@ class _AppBar extends StatelessWidget {
                 Text(
                   _greeting,
                   style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                    color: AppColors.textMuted,
                   ),
                 ),
                 Text(
                   profile.name.split(' ').first,
                   style: GoogleFonts.poppins(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
                 ),
@@ -117,7 +122,7 @@ class _AppBar extends StatelessWidget {
             ),
             const Spacer(),
             _NotificationBell(),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             _Avatar(name: profile.name),
           ],
         ),
@@ -132,22 +137,22 @@ class _NotificationBell extends StatelessWidget {
     return Stack(
       children: [
         Container(
-          width: 42,
-          height: 42,
+          width: 38,
+          height: 38,
           decoration: BoxDecoration(
             color: AppColors.darkCard,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(color: AppColors.darkBorder),
           ),
           child: const Icon(Icons.notifications_outlined,
-              color: AppColors.textSecondary, size: 20),
+              color: AppColors.textMuted, size: 18),
         ),
         Positioned(
-          top: 8,
-          right: 8,
+          top: 9,
+          right: 9,
           child: Container(
-            width: 8,
-            height: 8,
+            width: 6,
+            height: 6,
             decoration: const BoxDecoration(
               color: AppColors.danger,
               shape: BoxShape.circle,
@@ -167,25 +172,28 @@ class _Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 42,
-      height: 42,
+      width: 38,
+      height: 38,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: AppColors.blueGradient),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.electricBlue.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.electricBlue.withValues(alpha: 0.25)),
       ),
       child: Center(
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
           style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.electricBlue,
           ),
         ),
       ),
     );
   }
 }
+
+// ── Stat row ───────────────────────────────────────────────────────────────────
 
 class _StatRow extends StatelessWidget {
   final int vehicleCount;
@@ -200,26 +208,26 @@ class _StatRow extends StatelessWidget {
           child: _StatCard(
             label: 'Active Guests',
             value: '${MockData.guestEntries.where((e) => !e.isExpired).length}',
-            icon: Icons.people_rounded,
+            icon: Icons.people_outline_rounded,
             color: AppColors.electricBlue,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: _StatCard(
             label: 'My Vehicles',
             value: '$vehicleCount',
-            icon: Icons.directions_car_rounded,
+            icon: Icons.directions_car_outlined,
             color: AppColors.emerald,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: _StatCard(
             label: 'QR Scans',
             value: '14',
             icon: Icons.qr_code_rounded,
-            color: const Color(0xFFAB47BC),
+            color: AppColors.textSecondary,
           ),
         ),
       ],
@@ -243,30 +251,30 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
       decoration: BoxDecoration(
         color: AppColors.darkCard,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.darkBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 20),
+          Icon(icon, color: color, size: 17),
           const SizedBox(height: 10),
           Text(
             value,
             style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
               color: Colors.white,
             ),
           ),
           Text(
             label,
             style: GoogleFonts.inter(
-              fontSize: 11,
-              color: AppColors.textSecondary,
+              fontSize: 10,
+              color: AppColors.textMuted,
             ),
           ),
         ],
@@ -274,6 +282,8 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
+
+// ── No vehicle banner ──────────────────────────────────────────────────────────
 
 class _NoVehicleBanner extends StatelessWidget {
   final VoidCallback onAddGuest;
@@ -283,27 +293,16 @@ class _NoVehicleBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.darkCard,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.electricBlue.withOpacity(0.3),
-          style: BorderStyle.solid,
-        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.darkBorder),
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.electricBlue.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(Icons.add_rounded,
-                color: AppColors.electricBlue, size: 24),
-          ),
+          const Icon(Icons.directions_car_outlined,
+              color: AppColors.textMuted, size: 22),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -312,16 +311,16 @@ class _NoVehicleBanner extends StatelessWidget {
                 Text(
                   'No Vehicle Linked',
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
                     color: Colors.white,
                   ),
                 ),
                 Text(
-                  'Add a vehicle from Settings to use the full features.',
+                  'Add a vehicle in Settings to enable guest access.',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: AppColors.textMuted,
                   ),
                 ),
               ],
@@ -332,6 +331,8 @@ class _NoVehicleBanner extends StatelessWidget {
     );
   }
 }
+
+// ── Section header ─────────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
   final String title;
@@ -347,7 +348,7 @@ class _SectionHeader extends StatelessWidget {
         Text(
           title,
           style: GoogleFonts.poppins(
-            fontSize: 17,
+            fontSize: 15,
             fontWeight: FontWeight.w600,
             color: Colors.white,
           ),
@@ -356,9 +357,8 @@ class _SectionHeader extends StatelessWidget {
           onTap: () {},
           child: Text(
             action,
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.inter(
               fontSize: 13,
-              fontWeight: FontWeight.w500,
               color: AppColors.electricBlue,
             ),
           ),
@@ -367,6 +367,8 @@ class _SectionHeader extends StatelessWidget {
     );
   }
 }
+
+// ── Vehicle tile ───────────────────────────────────────────────────────────────
 
 class _VehicleTile extends StatelessWidget {
   final VehicleProfile vehicle;
@@ -377,30 +379,22 @@ class _VehicleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isBike = vehicle.type == 'bike' ||
-        vehicle.model.toLowerCase().contains('enfield') ||
-        vehicle.model.toLowerCase().contains('bike');
+        vehicle.model.toLowerCase().contains('bike') ||
+        vehicle.model.toLowerCase().contains('enfield');
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.darkCard,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.darkBorder),
       ),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.electricBlue.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              isBike ? Icons.two_wheeler_rounded : Icons.directions_car_rounded,
-              color: AppColors.electricBlue,
-              size: 22,
-            ),
+          Icon(
+            isBike ? Icons.two_wheeler_rounded : Icons.directions_car_outlined,
+            color: AppColors.textSecondary,
+            size: 20,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -410,17 +404,17 @@ class _VehicleTile extends StatelessWidget {
                 Text(
                   vehicle.model,
                   style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                     color: Colors.white,
                   ),
                 ),
                 Text(
                   '${vehicle.plateNumber} · ${vehicle.color}',
                   style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                    letterSpacing: 0.5,
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ],
@@ -428,23 +422,24 @@ class _VehicleTile extends StatelessWidget {
           ),
           if (isPrimary)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: AppColors.electricBlue.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
+                color: AppColors.darkCardElevated,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppColors.darkBorder),
               ),
               child: Text(
                 'Primary',
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.electricBlue,
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary,
                 ),
               ),
             ),
           const SizedBox(width: 8),
           const Icon(Icons.chevron_right_rounded,
-              color: AppColors.textMuted, size: 20),
+              color: AppColors.textMuted, size: 18),
         ],
       ),
     );

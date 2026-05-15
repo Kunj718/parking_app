@@ -46,34 +46,51 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen>
 
   @override
   Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    // Available height = screen height minus status bar, nav bar
+    final minHeight = mq.size.height - mq.padding.top - mq.padding.bottom;
+
     return Scaffold(
       backgroundColor: AppColors.darkBg,
+      // Scaffold shrinks body when keyboard appears; SingleChildScrollView
+      // lets content scroll up instead of overflowing.
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 32),
-              _BackButton(),
-              const SizedBox(height: 40),
-              _headerSection(),
-              const SizedBox(height: 48),
-              _PhoneInputCard(
-                controller: _phoneController,
-                focusNode: _focusNode,
-                shakeAnim: _shakeAnim,
-                role: widget.role,
+          child: ConstrainedBox(
+            // ConstrainedBox guarantees the column is at least full-screen tall
+            // so Spacer() pushes the button to the bottom in normal state.
+            constraints: BoxConstraints(minHeight: minHeight),
+            child: IntrinsicHeight(
+              // IntrinsicHeight makes the Column expand to fill the constrained
+              // height, which is what Spacer needs to do its job.
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 32),
+                  _BackButton(),
+                  const SizedBox(height: 40),
+                  _headerSection(),
+                  const SizedBox(height: 48),
+                  _PhoneInputCard(
+                    controller: _phoneController,
+                    focusNode: _focusNode,
+                    shakeAnim: _shakeAnim,
+                    role: widget.role,
+                  ),
+                  const Spacer(),
+                  _SendOtpButton(
+                    isSending: _isSending,
+                    onTap: _sendOtp,
+                  ),
+                  const SizedBox(height: 16),
+                  _termsText(),
+                  const SizedBox(height: 32),
+                ],
               ),
-              const Spacer(),
-              _SendOtpButton(
-                isSending: _isSending,
-                onTap: _sendOtp,
-              ),
-              const SizedBox(height: 16),
-              _termsText(),
-              const SizedBox(height: 32),
-            ],
+            ),
           ),
         ),
       ),
@@ -139,20 +156,15 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen>
 
   Future<void> _sendOtp() async {
     final phone = _phoneController.text.trim();
-    if (phone.length != 10) {
-      _shakeController
-        ..reset()
-        ..forward();
-      return;
-    }
+    // UI demo — no validation, any number (or blank) proceeds
     setState(() => _isSending = true);
-    await Future.delayed(const Duration(milliseconds: 1200));
+    await Future.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
     setState(() => _isSending = false);
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => OtpScreen(
-          phone: '+91 $phone',
+          phone: phone.isEmpty ? '+91 9800000000' : '+91 $phone',
           role: widget.role,
         ),
       ),

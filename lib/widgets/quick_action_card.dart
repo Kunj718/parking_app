@@ -15,67 +15,56 @@ class QuickActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isBike = vehicle.type == 'bike' ||
+        vehicle.model.toLowerCase().contains('bike') ||
+        vehicle.model.toLowerCase().contains('enfield');
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1A2550), Color(0xFF0F1629)],
-        ),
-        borderRadius: BorderRadius.circular(24),
+        color: AppColors.darkCard,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.darkBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header row
           Row(
             children: [
               Text(
                 'My Vehicle',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
-                  letterSpacing: 0.5,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: AppColors.textMuted,
+                  letterSpacing: 0.4,
                 ),
               ),
               const Spacer(),
               _StatusChip(label: 'Registered', color: AppColors.emerald),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+          // Vehicle row
           Row(
             children: [
-              // Car icon with gradient bg
               Container(
-                width: 56,
-                height: 56,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: AppColors.blueGradient,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.electricBlue.withOpacity(0.35),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  color: AppColors.darkCardElevated,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.darkBorder),
                 ),
-                child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 28),
+                child: Icon(
+                  isBike
+                      ? Icons.two_wheeler_rounded
+                      : Icons.directions_car_outlined,
+                  color: AppColors.electricBlue,
+                  size: 22,
+                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,7 +72,7 @@ class QuickActionCard extends StatelessWidget {
                     Text(
                       vehicle.model,
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
@@ -92,23 +81,19 @@ class QuickActionCard extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          width: 10,
-                          height: 10,
+                          width: 8,
+                          height: 8,
                           decoration: BoxDecoration(
                             color: _colorFromName(vehicle.color),
                             shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 1,
-                            ),
                           ),
                         ),
                         const SizedBox(width: 6),
                         Text(
                           vehicle.color,
                           style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                            color: AppColors.textMuted,
                           ),
                         ),
                       ],
@@ -118,50 +103,42 @@ class QuickActionCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Container(
-            height: 1,
-            color: AppColors.darkBorder,
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: AppColors.darkDivider),
+          const SizedBox(height: 14),
+          // Footer row — plate + add guest
           Row(
             children: [
               Expanded(
                 child: _InfoTile(
                   label: 'Plate',
                   value: vehicle.plateNumber,
-                  icon: Icons.credit_card_rounded,
+                  icon: Icons.credit_card_outlined,
                 ),
               ),
-              const SizedBox(width: 12),
               GestureDetector(
                 onTap: onAddGuest,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: AppColors.emeraldGradient,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.emerald.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    color: AppColors.emerald.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: AppColors.emerald.withValues(alpha: 0.25)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.add_rounded, color: Colors.white, size: 18),
-                      const SizedBox(width: 6),
+                      Icon(Icons.add_rounded,
+                          color: AppColors.emerald, size: 16),
+                      const SizedBox(width: 5),
                       Text(
                         'Add Guest',
                         style: GoogleFonts.poppins(
-                          fontSize: 13,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: AppColors.emerald,
                         ),
                       ),
                     ],
@@ -178,13 +155,13 @@ class QuickActionCard extends StatelessWidget {
   Color _colorFromName(String name) {
     final lower = name.toLowerCase();
     if (lower.contains('white')) return Colors.white;
-    if (lower.contains('black')) return const Color(0xFF212121);
+    if (lower.contains('black')) return const Color(0xFF424242);
     if (lower.contains('red')) return Colors.red;
-    if (lower.contains('blue')) return Colors.blue;
+    if (lower.contains('blue')) return AppColors.electricBlue;
     if (lower.contains('grey') || lower.contains('gray')) return Colors.grey;
     if (lower.contains('silver')) return const Color(0xFFC0C0C0);
     if (lower.contains('orange')) return Colors.orange;
-    return AppColors.electricBlue;
+    return AppColors.textSecondary;
   }
 }
 
@@ -197,17 +174,17 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.35)),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Text(
         label,
-        style: GoogleFonts.poppins(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
+        style: GoogleFonts.inter(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
           color: color,
         ),
       ),
@@ -220,27 +197,27 @@ class _InfoTile extends StatelessWidget {
   final String value;
   final IconData icon;
 
-  const _InfoTile({required this.label, required this.value, required this.icon});
+  const _InfoTile(
+      {required this.label, required this.value, required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 15, color: AppColors.textSecondary),
+        Icon(icon, size: 14, color: AppColors.textMuted),
         const SizedBox(width: 6),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: GoogleFonts.inter(fontSize: 10, color: AppColors.textMuted),
-            ),
+            Text(label,
+                style:
+                    GoogleFonts.inter(fontSize: 10, color: AppColors.textMuted)),
             Text(
               value,
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: Colors.white,
               ),
             ),
           ],

@@ -12,60 +12,20 @@ class QrCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1E2A60), Color(0xFF0D1442)],
-        ),
-        border: Border.all(color: AppColors.darkBorder, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.electricBlue.withOpacity(0.18),
-            blurRadius: 32,
-            offset: const Offset(0, 12),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: AppColors.darkCard,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.darkBorder),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: Stack(
-          children: [
-            // Background decorative circles
-            Positioned(
-              top: -40,
-              right: -40,
-              child: _glowCircle(160, AppColors.electricBlue.withOpacity(0.07)),
-            ),
-            Positioned(
-              bottom: -30,
-              left: -30,
-              child: _glowCircle(120, AppColors.emerald.withOpacity(0.07)),
-            ),
-            // Dot pattern painter
-            Positioned.fill(
-              child: CustomPaint(painter: _DotPatternPainter()),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  _cardHeader(),
-                  const SizedBox(height: 20),
-                  _qrSection(),
-                  const SizedBox(height: 20),
-                  _cardFooter(),
-                ],
-              ),
-            ),
-          ],
-        ),
+      child: Column(
+        children: [
+          _cardHeader(),
+          const SizedBox(height: 20),
+          _qrSection(),
+          const SizedBox(height: 18),
+          _cardFooter(),
+        ],
       ),
     );
   }
@@ -74,50 +34,50 @@ class QrCardWidget extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: AppColors.blueGradient,
-            ),
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.electricBlue.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+                color: AppColors.electricBlue.withValues(alpha: 0.2)),
           ),
-          child: const Icon(Icons.local_parking_rounded, color: Colors.white, size: 22),
+          child: Icon(Icons.local_parking_rounded,
+              color: AppColors.electricBlue, size: 18),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'ParkQR',
               style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
                 color: Colors.white,
-                letterSpacing: 0.5,
               ),
             ),
             Text(
               'Society Parking System',
               style: GoogleFonts.inter(
-                fontSize: 11,
-                color: AppColors.textSecondary,
+                fontSize: 10,
+                color: AppColors.textMuted,
               ),
             ),
           ],
         ),
         const Spacer(),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.emerald.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.emerald.withOpacity(0.4)),
+            color: AppColors.emerald.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: AppColors.emerald.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
               Container(
-                width: 7,
-                height: 7,
+                width: 6,
+                height: 6,
                 decoration: const BoxDecoration(
                   color: AppColors.emerald,
                   shape: BoxShape.circle,
@@ -126,9 +86,9 @@ class QrCardWidget extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 'Active',
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
                   color: AppColors.emerald,
                 ),
               ),
@@ -141,22 +101,15 @@ class QrCardWidget extends StatelessWidget {
 
   Widget _qrSection() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.electricBlue.withOpacity(0.25),
-            blurRadius: 24,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
       ),
       child: QrImageView(
         data: profile.qrData,
         version: QrVersions.auto,
-        size: 180,
+        size: 172,
         eyeStyle: const QrEyeStyle(
           eyeShape: QrEyeShape.square,
           color: AppColors.deepNavy,
@@ -180,69 +133,45 @@ class QrCardWidget extends StatelessWidget {
               Text(
                 profile.name,
                 style: GoogleFonts.poppins(
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
-                '${profile.tower} · Flat ${profile.flatNumber}',
+                '${profile.tower} · ${profile.homeNumber}',
                 style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                  color: AppColors.textMuted,
                 ),
               ),
             ],
           ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: AppColors.navyGradient),
-            borderRadius: BorderRadius.circular(10),
+            color: AppColors.darkCardElevated,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.darkBorder),
           ),
           child: Text(
-            profile.flatNumber,
+            profile.homeNumber,
             style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              letterSpacing: 1,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+              letterSpacing: 0.5,
             ),
           ),
         ),
       ],
     );
   }
-
-  Widget _glowCircle(double size, Color color) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-    );
-  }
 }
 
-class _DotPatternPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.03)
-      ..style = PaintingStyle.fill;
-    const spacing = 20.0;
-    const radius = 1.5;
-    for (double x = 0; x < size.width; x += spacing) {
-      for (double y = 0; y < size.height; y += spacing) {
-        canvas.drawCircle(Offset(x, y), radius, paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+// ── QR card actions ────────────────────────────────────────────────────────────
 
 class QrCardActions extends StatelessWidget {
   const QrCardActions({super.key});
@@ -253,30 +182,26 @@ class QrCardActions extends StatelessWidget {
       children: [
         Expanded(
           child: _ActionButton(
-            icon: Icons.download_rounded,
+            icon: Icons.download_outlined,
             label: 'Download',
             onTap: () => _showSnack(context, 'QR saved to gallery'),
-            gradient: AppColors.blueGradient,
+            isPrimary: true,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: _ActionButton(
-            icon: Icons.print_rounded,
+            icon: Icons.print_outlined,
             label: 'Print',
             onTap: () => _showSnack(context, 'Sending to printer...'),
-            gradient: [AppColors.darkCard, AppColors.darkCardElevated],
-            hasBorder: true,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: _ActionButton(
-            icon: Icons.share_rounded,
+            icon: Icons.share_outlined,
             label: 'Share',
             onTap: () => _showSnack(context, 'Share sheet opened'),
-            gradient: [AppColors.darkCard, AppColors.darkCardElevated],
-            hasBorder: true,
           ),
         ),
       ],
@@ -299,15 +224,13 @@ class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final List<Color> gradient;
-  final bool hasBorder;
+  final bool isPrimary;
 
   const _ActionButton({
     required this.icon,
     required this.label,
     required this.onTap,
-    required this.gradient,
-    this.hasBorder = false,
+    this.isPrimary = false,
   });
 
   @override
@@ -315,22 +238,33 @@ class _ActionButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: gradient),
-          borderRadius: BorderRadius.circular(14),
-          border: hasBorder ? Border.all(color: AppColors.darkBorder) : null,
+          color: isPrimary
+              ? AppColors.electricBlue.withValues(alpha: 0.10)
+              : AppColors.darkCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isPrimary
+                ? AppColors.electricBlue.withValues(alpha: 0.25)
+                : AppColors.darkBorder,
+          ),
         ),
         child: Column(
           children: [
-            Icon(icon, color: Colors.white, size: 20),
+            Icon(
+              icon,
+              color: isPrimary ? AppColors.electricBlue : AppColors.textSecondary,
+              size: 18,
+            ),
             const SizedBox(height: 4),
             Text(
               label,
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: Colors.white,
+                color:
+                    isPrimary ? AppColors.electricBlue : AppColors.textSecondary,
               ),
             ),
           ],

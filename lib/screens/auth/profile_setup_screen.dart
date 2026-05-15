@@ -31,7 +31,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   // Step 2 — Society Details
   String _selectedTower = 'Tower A';
-  final _flatController = TextEditingController();
+  final _homeNumberController = TextEditingController();
+  final _tenamentController = TextEditingController();
   final _parkingSlotController = TextEditingController();
   final _towers = ['Tower A', 'Tower B', 'Tower C', 'Tower D', 'Wing 1', 'Wing 2'];
 
@@ -53,7 +54,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     _pageController.dispose();
     _nameController.dispose();
     _emailController.dispose();
-    _flatController.dispose();
+    _homeNumberController.dispose();
+    _tenamentController.dispose();
     _parkingSlotController.dispose();
     _plateController.dispose();
     _modelController.dispose();
@@ -61,14 +63,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   void _nextStep() {
-    if (_currentStep == 0 && _nameController.text.trim().isEmpty) {
-      _showError('Please enter your full name.');
-      return;
-    }
-    if (_currentStep == 1 && _flatController.text.trim().isEmpty) {
-      _showError('Please enter your flat number.');
-      return;
-    }
+    // UI demo — no field validation, proceed freely
     if (_currentStep == 2) {
       _submit();
       return;
@@ -103,13 +98,22 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   Future<void> _submit() async {
     setState(() => _isSubmitting = true);
 
-    // Build profile
+    // UI demo — use defaults for any blank field
+    final name = _nameController.text.trim().isEmpty
+        ? 'Demo User'
+        : _nameController.text.trim();
+    final homeNumber = _homeNumberController.text.trim().isEmpty
+        ? 'A-101'
+        : _homeNumberController.text.trim();
+
     final vehicles = <VehicleProfile>[];
-    if (_hasVehicle && _plateController.text.trim().isNotEmpty) {
+    if (_hasVehicle) {
       vehicles.add(VehicleProfile(
-        plateNumber: _plateController.text.trim().toUpperCase(),
+        plateNumber: _plateController.text.trim().isEmpty
+            ? 'MH01AB1234'
+            : _plateController.text.trim().toUpperCase(),
         model: _modelController.text.trim().isEmpty
-            ? 'Vehicle'
+            ? 'My Vehicle'
             : _modelController.text.trim(),
         color: _selectedColor,
         type: _vehicleType,
@@ -118,10 +122,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
     final profile = UserProfile(
       id: 'RES${DateTime.now().millisecondsSinceEpoch}',
-      name: _nameController.text.trim(),
+      name: name,
       phone: widget.phone,
-      flatNumber: _flatController.text.trim(),
+      homeNumber: homeNumber,
       tower: _selectedTower,
+      tenamentNo: _tenamentController.text.trim().isEmpty
+          ? null
+          : _tenamentController.text.trim(),
       email: _emailController.text.trim().isEmpty
           ? null
           : _emailController.text.trim(),
@@ -176,7 +183,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   _Step2SocietyDetails(
                     selectedTower: _selectedTower,
                     towers: _towers,
-                    flatController: _flatController,
+                    homeNumberController: _homeNumberController,
+                    tenamentController: _tenamentController,
                     parkingSlotController: _parkingSlotController,
                     onTowerChanged: (v) => setState(() => _selectedTower = v),
                   ),
@@ -401,14 +409,16 @@ class _Step1PersonalInfo extends StatelessWidget {
 class _Step2SocietyDetails extends StatelessWidget {
   final String selectedTower;
   final List<String> towers;
-  final TextEditingController flatController;
+  final TextEditingController homeNumberController;
+  final TextEditingController tenamentController;
   final TextEditingController parkingSlotController;
   final ValueChanged<String> onTowerChanged;
 
   const _Step2SocietyDetails({
     required this.selectedTower,
     required this.towers,
-    required this.flatController,
+    required this.homeNumberController,
+    required this.tenamentController,
     required this.parkingSlotController,
     required this.onTowerChanged,
   });
@@ -420,7 +430,10 @@ class _Step2SocietyDetails extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _StepIcon(icon: Icons.apartment_rounded, gradient: AppColors.emeraldGradient),
+          _StepIcon(
+            icon: Icons.apartment_rounded,
+            gradient: AppColors.emeraldGradient,
+          ),
           const SizedBox(height: 24),
           Text(
             'Your Home',
@@ -432,10 +445,13 @@ class _Step2SocietyDetails extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Guards use this to verify which flat you belong to.',
-            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+            'Guards use this to verify where you live in the society.',
+            style: GoogleFonts.inter(
+                fontSize: 14, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 32),
+
+          // ── Tower / Wing ────────────────────────────────────────────────
           _FormLabel(label: 'Tower / Wing'),
           const SizedBox(height: 8),
           Container(
@@ -454,8 +470,8 @@ class _Step2SocietyDetails extends StatelessWidget {
                   dropdownColor: AppColors.darkCard,
                   icon: const Icon(Icons.keyboard_arrow_down_rounded,
                       color: AppColors.textSecondary),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 2),
                   items: towers
                       .map((t) => DropdownMenuItem(
                             value: t,
@@ -477,15 +493,42 @@ class _Step2SocietyDetails extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          _FormLabel(label: 'Flat Number'),
+
+          // ── Tenament No. ────────────────────────────────────────────────
+          _FormLabel(label: 'Tenament No.'),
+          const SizedBox(height: 4),
+          Text(
+            'Survey / tenament number from your agreement or society records',
+            style: GoogleFonts.inter(
+                fontSize: 11, color: AppColors.textMuted),
+          ),
           const SizedBox(height: 8),
           _StyledTextField(
-            controller: flatController,
-            hint: 'e.g. 704 or B-12',
+            controller: tenamentController,
+            hint: 'e.g. T-1234 or 56/A (optional)',
+            icon: Icons.tag_rounded,
+            textCapitalization: TextCapitalization.characters,
+          ),
+          const SizedBox(height: 20),
+
+          // ── Home Number ─────────────────────────────────────────────────
+          _FormLabel(label: 'Home Number'),
+          const SizedBox(height: 4),
+          Text(
+            'Flat no., house no., unit no. — whatever applies to you',
+            style: GoogleFonts.inter(
+                fontSize: 11, color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 8),
+          _StyledTextField(
+            controller: homeNumberController,
+            hint: 'e.g. 704, B-12, House 5',
             icon: Icons.home_outlined,
             textCapitalization: TextCapitalization.characters,
           ),
           const SizedBox(height: 20),
+
+          // ── Parking Slot ────────────────────────────────────────────────
           _FormLabel(label: 'Parking Slot'),
           const SizedBox(height: 8),
           _StyledTextField(
@@ -495,12 +538,15 @@ class _Step2SocietyDetails extends StatelessWidget {
             textCapitalization: TextCapitalization.characters,
           ),
           const SizedBox(height: 16),
+
+          // ── Info banner ─────────────────────────────────────────────────
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: AppColors.electricBlue.withOpacity(0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.electricBlue.withOpacity(0.2)),
+              border: Border.all(
+                  color: AppColors.electricBlue.withOpacity(0.2)),
             ),
             child: Row(
               children: [
@@ -509,7 +555,7 @@ class _Step2SocietyDetails extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Your flat number will be visible to guards when they scan your QR.',
+                    'Your home number and tenament no. are encoded in your QR. Guards and residents see this when they scan.',
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: AppColors.electricBlueLight,
@@ -899,7 +945,7 @@ class _Step4QrGenerated extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${profile!.tower} · Flat ${profile!.flatNumber}',
+                  '${profile!.tower} · ${profile!.homeNumber}',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     color: AppColors.textSecondary,

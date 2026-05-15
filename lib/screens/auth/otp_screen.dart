@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../state/app_state.dart';
 import 'profile_setup_screen.dart';
-import '../../../navigation/main_navigation.dart';
+import '../../navigation/main_navigation.dart';
 
 class OtpScreen extends StatefulWidget {
   final String phone;
@@ -20,7 +20,7 @@ class OtpScreen extends StatefulWidget {
 class _OtpScreenState extends State<OtpScreen>
     with SingleTickerProviderStateMixin {
   static const _otpLength = 6;
-  static const _validOtp = '123456'; // mock OTP
+  static const _validOtp = '123456';
 
   final List<TextEditingController> _controllers =
       List.generate(_otpLength, (_) => TextEditingController());
@@ -75,17 +75,18 @@ class _OtpScreenState extends State<OtpScreen>
     });
   }
 
-  String get _currentOtp =>
-      _controllers.map((c) => c.text).join();
+  String get _currentOtp => _controllers.map((c) => c.text).join();
 
   void _onDigitChanged(int index, String value) {
-    setState(() => _errorMsg = null);
+    if (_errorMsg != null) setState(() => _errorMsg = null);
+
     if (value.length == 1 && index < _otpLength - 1) {
       _focusNodes[index + 1].requestFocus();
     }
     if (value.isEmpty && index > 0) {
       _focusNodes[index - 1].requestFocus();
     }
+    // Auto-verify when all 6 digits are entered
     if (_currentOtp.length == _otpLength) {
       _verifyOtp();
     }
@@ -93,86 +94,85 @@ class _OtpScreenState extends State<OtpScreen>
 
   Future<void> _verifyOtp() async {
     if (_isVerifying) return;
-    final otp = _currentOtp;
-    if (otp.length != _otpLength) return;
-
     setState(() {
       _isVerifying = true;
       _errorMsg = null;
     });
 
-    await Future.delayed(const Duration(milliseconds: 1000));
+    // Dismiss keyboard
+    FocusScope.of(context).unfocus();
+
+    await Future.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
 
-    if (otp == _validOtp) {
-      setState(() => _isSuccess = true);
-      _successController.forward();
-      await Future.delayed(const Duration(milliseconds: 800));
-      if (!mounted) return;
+    // UI demo — always succeed regardless of what was entered
+    setState(() => _isSuccess = true);
+    _successController.forward();
+    await Future.delayed(const Duration(milliseconds: 700));
+    if (!mounted) return;
 
-      AppState.instance.selectedRole = widget.role;
+    AppState.instance.selectedRole = widget.role;
 
-      // If user already has a profile (returning user), go to app
-      if (AppState.instance.currentUser != null) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) =>
-                MainNavigation(role: AppState.instance.selectedRole),
-          ),
-          (_) => false,
-        );
-      } else {
-        // New user → profile setup
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => ProfileSetupScreen(
-              phone: widget.phone,
-              role: widget.role,
-            ),
-          ),
-        );
-      }
+    if (AppState.instance.currentUser != null) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => MainNavigation(role: AppState.instance.selectedRole),
+        ),
+        (_) => false,
+      );
     } else {
-      setState(() {
-        _isVerifying = false;
-        _errorMsg = 'Incorrect OTP. Try again or use 123456 for demo.';
-        for (final c in _controllers) c.clear();
-      });
-      _focusNodes[0].requestFocus();
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ProfileSetupScreen(
+            phone: widget.phone,
+            role: widget.role,
+          ),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final minHeight = mq.size.height - mq.padding.top - mq.padding.bottom;
+
     return Scaffold(
       backgroundColor: AppColors.darkBg,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 32),
-              _BackButton(),
-              const SizedBox(height: 40),
-              _headerSection(),
-              const SizedBox(height: 48),
-              _otpBoxes(),
-              if (_errorMsg != null) ...[
-                const SizedBox(height: 16),
-                _ErrorBanner(message: _errorMsg!),
-              ],
-              const SizedBox(height: 32),
-              _resendRow(),
-              const Spacer(),
-              _VerifyButton(
-                isVerifying: _isVerifying,
-                isSuccess: _isSuccess,
-                successScale: _successScale,
-                onTap: _verifyOtp,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: minHeight),
+            child: IntrinsicHeight(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 32),
+                  _BackButton(),
+                  const SizedBox(height: 40),
+                  _headerSection(),
+                  const SizedBox(height: 40),
+                  _otpBoxes(),
+                  if (_errorMsg != null) ...[
+                    const SizedBox(height: 16),
+                    _ErrorBanner(message: _errorMsg!),
+                  ],
+                  const SizedBox(height: 24),
+                  _resendRow(),
+                  const Spacer(),
+                  _VerifyButton(
+                    isVerifying: _isVerifying,
+                    isSuccess: _isSuccess,
+                    successScale: _successScale,
+                    onTap: _verifyOtp,
+                  ),
+                  const SizedBox(height: 32),
+                ],
               ),
-              const SizedBox(height: 32),
-            ],
+            ),
           ),
         ),
       ),
@@ -188,8 +188,7 @@ class _OtpScreenState extends State<OtpScreen>
           decoration: BoxDecoration(
             color: AppColors.emerald.withOpacity(0.15),
             borderRadius: BorderRadius.circular(16),
-            border:
-                Border.all(color: AppColors.emerald.withOpacity(0.3)),
+            border: Border.all(color: AppColors.emerald.withOpacity(0.3)),
           ),
           child: const Icon(Icons.sms_rounded,
               color: AppColors.emerald, size: 28),
@@ -276,7 +275,13 @@ class _OtpScreenState extends State<OtpScreen>
   }
 }
 
-class _OtpBox extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+// OTP Box — StatefulWidget so it can reactively update the border when focus
+// changes WITHOUT rebuilding (and therefore resetting) the TextField.
+// The old ListenableBuilder approach rebuilt the TextField on every focus
+// change, destroying the input connection and making typed digits vanish.
+// ─────────────────────────────────────────────────────────────────────────────
+class _OtpBox extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool isSuccess;
@@ -292,58 +297,106 @@ class _OtpBox extends StatelessWidget {
   });
 
   @override
+  State<_OtpBox> createState() => _OtpBoxState();
+}
+
+class _OtpBoxState extends State<_OtpBox> {
+  @override
+  void initState() {
+    super.initState();
+    // Rebuild only the border decoration when focus changes — the TextField
+    // itself is never destroyed, so the input connection stays intact.
+    widget.focusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode.removeListener(_onFocusChange);
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final borderColor = isSuccess
+    final isFocused = widget.focusNode.hasFocus;
+
+    final borderColor = widget.isSuccess
         ? AppColors.emerald
-        : isError
+        : widget.isError
             ? AppColors.danger
-            : AppColors.darkBorder;
-    final bgColor = isSuccess
+            : isFocused
+                ? AppColors.electricBlue
+                : AppColors.darkBorder;
+
+    final bgColor = widget.isSuccess
         ? AppColors.successDim
-        : isError
+        : widget.isError
             ? AppColors.dangerDim
-            : AppColors.darkCard;
+            : isFocused
+                ? AppColors.darkCardElevated
+                : AppColors.darkCard;
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 180),
       width: 48,
       height: 58,
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: focusNode.hasFocus
-              ? AppColors.electricBlue
-              : borderColor,
-          width: focusNode.hasFocus ? 1.5 : 1,
+          color: borderColor,
+          width: isFocused ? 2 : 1,
         ),
+        boxShadow: isFocused
+            ? [
+                BoxShadow(
+                  color: AppColors.electricBlue.withOpacity(0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
-      child: ListenableBuilder(
-        listenable: focusNode,
-        builder: (_, __) => TextField(
-          controller: controller,
-          focusNode: focusNode,
-          textAlign: TextAlign.center,
-          keyboardType: TextInputType.number,
-          maxLength: 1,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          style: GoogleFonts.poppins(
-            fontSize: 22,
-            fontWeight: FontWeight.w700,
-            color: isSuccess ? AppColors.emerald : Colors.white,
-          ),
-          decoration: const InputDecoration(
-            counterText: '',
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-          ),
-          onChanged: onChanged,
+      // TextField is built once and lives here permanently —
+      // it is NOT inside any ListenableBuilder or rebuilding wrapper.
+      child: TextField(
+        controller: widget.controller,
+        focusNode: widget.focusNode,
+        textAlign: TextAlign.center,
+        keyboardType: TextInputType.number,
+        maxLength: 1,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        // Explicit white cursor so it's visible on the dark background
+        cursorColor: Colors.white,
+        cursorWidth: 2,
+        // Prevent context menu (copy/paste) from popping up in OTP boxes
+        contextMenuBuilder: (_, __) => const SizedBox.shrink(),
+        style: GoogleFonts.poppins(
+          fontSize: 24,
+          fontWeight: FontWeight.w700,
+          // White text so it's always visible on the dark card background
+          color: widget.isSuccess ? AppColors.emerald : Colors.white,
         ),
+        decoration: const InputDecoration(
+          counterText: '',
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+          isDense: true,
+        ),
+        onChanged: widget.onChanged,
       ),
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Supporting widgets
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _ErrorBanner extends StatelessWidget {
   final String message;
@@ -367,10 +420,7 @@ class _ErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                color: AppColors.danger,
-              ),
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.danger),
             ),
           ),
         ],
@@ -401,8 +451,7 @@ class _VerifyButton extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 18),
           decoration: BoxDecoration(
-            gradient:
-                const LinearGradient(colors: AppColors.emeraldGradient),
+            gradient: const LinearGradient(colors: AppColors.emeraldGradient),
             borderRadius: BorderRadius.circular(18),
           ),
           child: Row(
