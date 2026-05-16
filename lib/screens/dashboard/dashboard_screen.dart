@@ -12,11 +12,14 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    // t — standard Theme handles (scaffoldBackgroundColor, colorScheme, etc.)
+    // Each private widget fetches context.colors for custom extension slots.
+    final t = Theme.of(context);
     final profile = AppState.instance.currentUser;
+
     if (profile == null) {
       return Scaffold(
-        backgroundColor: c.bg,
+        backgroundColor: t.scaffoldBackgroundColor,
         body: const Center(
           child: CircularProgressIndicator(color: AppColors.electricBlue),
         ),
@@ -24,7 +27,9 @@ class DashboardScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: c.bg,
+      // Theme.of(context).scaffoldBackgroundColor flips automatically:
+      //   light → Color(0xFFF5F7FC)  |  dark → Color(0xFF0F172A)
+      backgroundColor: t.scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           _AppBar(profile: profile),
@@ -83,9 +88,11 @@ class _AppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context);
     final c = context.colors;
     return SliverAppBar(
-      backgroundColor: c.bg,
+      // Matches scaffold so the app bar blends seamlessly on scroll
+      backgroundColor: t.scaffoldBackgroundColor,
       floating: true,
       pinned: false,
       expandedHeight: 0,
@@ -110,7 +117,9 @@ class _AppBar extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: c.textPrimary,
+                    // Theme.of(context).colorScheme.onSurface:
+                    //   light → Color(0xFF1A2340)  |  dark → Color(0xFFEEF2FF)
+                    color: t.colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -129,6 +138,7 @@ class _AppBar extends StatelessWidget {
 class _NotificationBell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context);
     final c = context.colors;
     return Stack(
       children: [
@@ -136,9 +146,11 @@ class _NotificationBell extends StatelessWidget {
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: c.card,
+            // Theme.of(context).colorScheme.surface:
+            //   light → Color(0xFFFFFFFF)  |  dark → Color(0xFF1E293B)
+            color: t.colorScheme.surface,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: c.border),
+            border: Border.all(color: t.colorScheme.outline),
           ),
           child: Icon(Icons.notifications_outlined,
               color: c.textHint, size: 18),
@@ -173,7 +185,8 @@ class _Avatar extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.electricBlue.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.electricBlue.withValues(alpha: 0.2)),
+        border: Border.all(
+            color: AppColors.electricBlue.withValues(alpha: 0.2)),
       ),
       child: Center(
         child: Text(
@@ -196,7 +209,6 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
     return Row(
       children: [
         Expanded(
@@ -222,7 +234,7 @@ class _StatRow extends StatelessWidget {
             label: 'Entry Today',
             value: '27',
             icon: Icons.login_rounded,
-            color: c.textSecondary,
+            color: const Color(0xFF7C4DFF),
           ),
         ),
       ],
@@ -245,13 +257,15 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context);
     final c = context.colors;
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
       decoration: BoxDecoration(
-        color: c.card,
+        // Adaptive card surface — white in light, slate-800 in dark
+        color: t.colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: c.border),
+        border: Border.all(color: t.colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,7 +277,7 @@ class _StatCard extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: c.textPrimary,
+              color: t.colorScheme.onSurface,
             ),
           ),
           Text(
@@ -284,13 +298,14 @@ class _NoVehicleBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context);
     final c = context.colors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: c.card,
+        color: t.colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: c.border),
+        border: Border.all(color: t.colorScheme.outline),
       ),
       child: Row(
         children: [
@@ -306,7 +321,7 @@ class _NoVehicleBanner extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: c.textPrimary,
+                    color: t.colorScheme.onSurface,
                   ),
                 ),
                 Text(
@@ -333,7 +348,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    final t = Theme.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -342,7 +357,7 @@ class _SectionHeader extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: c.textPrimary,
+            color: t.colorScheme.onSurface,
           ),
         ),
         GestureDetector(
@@ -368,6 +383,7 @@ class _VehicleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context);
     final c = context.colors;
     final isBike = vehicle.type == 'bike' ||
         vehicle.model.toLowerCase().contains('bike') ||
@@ -376,9 +392,9 @@ class _VehicleTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: c.card,
+        color: t.colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: c.border),
+        border: Border.all(color: t.colorScheme.outline),
       ),
       child: Row(
         children: [
@@ -397,7 +413,7 @@ class _VehicleTile extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: c.textPrimary,
+                    color: t.colorScheme.onSurface,
                   ),
                 ),
                 Text(
@@ -416,9 +432,10 @@ class _VehicleTile extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
+                // cardElevated has no Theme equivalent → keep from extension
                 color: c.cardElevated,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: c.border),
+                border: Border.all(color: t.colorScheme.outline),
               ),
               child: Text(
                 'Primary',

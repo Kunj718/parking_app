@@ -115,6 +115,8 @@ class ScannedProfile {
   bool get hasTenament => tenamentNo != null && tenamentNo!.isNotEmpty;
 }
 
+// ─── Global app state ─────────────────────────────────────────────────────────
+
 class AppState {
   static final AppState instance = AppState._();
   AppState._();
@@ -124,7 +126,11 @@ class AppState {
   String selectedRole = 'resident';
   UserProfile? currentUser;
 
-  // Reactive theme mode — listened to by MaterialApp in main.dart
+  // ── Reactive theme mode ───────────────────────────────────────────────────
+  // ValueNotifier<ThemeMode> is lightweight — no ChangeNotifier overhead.
+  // ValueListenableBuilder in main.dart rebuilds MaterialApp on every change,
+  // which propagates the new ThemeData to every Theme.of(context) call in the
+  // widget tree immediately.
   final ValueNotifier<ThemeMode> themeModeNotifier =
       ValueNotifier(ThemeMode.light);
 

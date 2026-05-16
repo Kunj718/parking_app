@@ -14,10 +14,16 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notifications = true;
   bool _guestAlerts = true;
-  bool _darkMode = false;
+
+  // Always read from the live theme so the toggle never shows a stale value.
+  // Theme.of(context).brightness flips the instant MaterialApp rebuilds.
+  bool get _darkMode => Theme.of(context).brightness == Brightness.dark;
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context);
+    final c = context.colors;
+
     final resident = AppState.instance.currentUser ??
         const UserProfile(
           id: '',
@@ -29,13 +35,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           vehicles: [],
         );
 
-    final c = context.colors;
     return Scaffold(
-      backgroundColor: c.bg,
+      backgroundColor: t.scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            backgroundColor: c.bg,
+            backgroundColor: t.scaffoldBackgroundColor,
             floating: true,
             toolbarHeight: 64,
             title: Text(
@@ -43,7 +48,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: c.textPrimary,
+                color: t.colorScheme.onSurface,
               ),
             ),
           ),
@@ -84,11 +89,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: 'Dark Mode',
                       subtitle: 'Use dark theme throughout',
                       value: _darkMode,
-                      onChanged: (v) {
-                        setState(() => _darkMode = v);
-                        AppState.instance.themeMode =
-                            v ? ThemeMode.dark : ThemeMode.light;
-                      },
+                      // Single-line toggle — updates global ThemeMode instantly.
+                      // ValueListenableBuilder in main.dart propagates the change
+                      // to every Theme.of(context) call in the entire widget tree.
+                      onChanged: (v) => AppState.instance.themeMode =
+                          v ? ThemeMode.dark : ThemeMode.light,
                     ),
                   ],
                 ),
@@ -161,13 +166,14 @@ class _ProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context);
     final c = context.colors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: c.card,
+        color: t.colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: c.border),
+        border: Border.all(color: t.colorScheme.outline),
       ),
       child: Row(
         children: [
@@ -201,7 +207,7 @@ class _ProfileCard extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: c.textPrimary,
+                    color: t.colorScheme.onSurface,
                   ),
                 ),
                 Text(
@@ -239,6 +245,7 @@ class _SettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context);
     final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,9 +264,9 @@ class _SettingsGroup extends StatelessWidget {
         ),
         Container(
           decoration: BoxDecoration(
-            color: c.card,
+            color: t.colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: c.border),
+            border: Border.all(color: t.colorScheme.outline),
           ),
           child: Column(
             children: tiles.asMap().entries.map((e) {
@@ -270,7 +277,7 @@ class _SettingsGroup extends StatelessWidget {
                   if (!isLast)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Divider(height: 1, color: c.divider),
+                      child: Divider(height: 1, color: t.dividerColor),
                     ),
                 ],
               );
@@ -301,6 +308,7 @@ class _ToggleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context);
     final c = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -324,7 +332,7 @@ class _ToggleTile extends StatelessWidget {
                     style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: c.textPrimary)),
+                        color: t.colorScheme.onSurface)),
                 if (subtitle.isNotEmpty)
                   Text(subtitle,
                       style: GoogleFonts.inter(
@@ -332,12 +340,11 @@ class _ToggleTile extends StatelessWidget {
               ],
             ),
           ),
+          // No explicit color properties — they come from the global
+          // AppTheme.switchTheme defined in app_theme.dart.
           Switch(
             value: value,
             onChanged: onChanged,
-            activeTrackColor: AppColors.electricBlue,
-            inactiveThumbColor: c.textHint,
-            inactiveTrackColor: c.cardElevated,
           ),
         ],
       ),
@@ -360,6 +367,7 @@ class _NavTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = Theme.of(context);
     final c = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -383,7 +391,7 @@ class _NavTile extends StatelessWidget {
                     style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: c.textPrimary)),
+                        color: t.colorScheme.onSurface)),
                 if (subtitle.isNotEmpty)
                   Text(subtitle,
                       style: GoogleFonts.inter(
@@ -391,8 +399,7 @@ class _NavTile extends StatelessWidget {
               ],
             ),
           ),
-          Icon(Icons.chevron_right_rounded,
-              color: c.textHint, size: 18),
+          Icon(Icons.chevron_right_rounded, color: c.textHint, size: 18),
         ],
       ),
     );

@@ -12,10 +12,13 @@ void main() {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  // Initial system UI overlay (light mode default).
+  // Each AppBarTheme.systemOverlayStyle takes over once MaterialApp renders.
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,   // dark icons on white bg
+    statusBarIconBrightness: Brightness.dark,
     systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.dark,
   ));
   runApp(const ParkingApp());
 }
@@ -42,14 +45,16 @@ class ParkingApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ValueListenableBuilder rebuilds only the MaterialApp subtree when
+    // ThemeMode changes — zero extra dependencies, zero boilerplate.
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: AppState.instance.themeModeNotifier,
       builder: (_, mode, __) => MaterialApp(
         title: 'Society Parking QR',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        themeMode: mode,
+        theme: AppTheme.light(),       // white lightweight theme
+        darkTheme: AppTheme.dark(),    // premium #0F172A midnight theme
+        themeMode: mode,               // driven by AppState.instance.themeMode
         home: _resolveHome(),
       ),
     );
