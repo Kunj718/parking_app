@@ -31,9 +31,6 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen>
     _shakeAnim = Tween(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _shakeController, curve: Curves.elasticOut),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
   }
 
   @override
@@ -50,8 +47,9 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen>
     // Available height = screen height minus status bar, nav bar
     final minHeight = mq.size.height - mq.padding.top - mq.padding.bottom;
 
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: c.bg,
       // Scaffold shrinks body when keyboard appears; SingleChildScrollView
       // lets content scroll up instead of overflowing.
       resizeToAvoidBottomInset: true,
@@ -98,6 +96,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen>
   }
 
   Widget _headerSection() {
+    final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -123,7 +122,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen>
           style: GoogleFonts.poppins(
             fontSize: 32,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: c.textPrimary,
             height: 1.2,
           ),
         ),
@@ -132,7 +131,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen>
           'We\'ll send a one-time password to verify your identity.',
           style: GoogleFonts.inter(
             fontSize: 15,
-            color: AppColors.textSecondary,
+            color: c.textSecondary,
             height: 1.5,
           ),
         ),
@@ -141,13 +140,14 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen>
   }
 
   Widget _termsText() {
+    final c = context.colors;
     return Center(
       child: Text(
         'By continuing, you agree to our Terms & Privacy Policy.',
         textAlign: TextAlign.center,
         style: GoogleFonts.inter(
           fontSize: 12,
-          color: AppColors.textMuted,
+          color: c.textHint,
           height: 1.5,
         ),
       ),
@@ -176,15 +176,16 @@ class _BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!Navigator.of(context).canPop()) return const SizedBox.shrink();
+    final c = context.colors;
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(),
       child: Container(
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: c.card,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.darkBorder),
+          border: Border.all(color: c.border),
         ),
         child: const Icon(Icons.arrow_back_rounded,
             color: AppColors.textSecondary, size: 20),
@@ -208,6 +209,7 @@ class _PhoneInputCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return AnimatedBuilder(
       animation: shakeAnim,
       builder: (_, child) {
@@ -220,23 +222,22 @@ class _PhoneInputCard extends StatelessWidget {
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.darkBorder),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(50),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.07),
+              blurRadius: 18,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            // Country code block
-            Container(
-              margin: const EdgeInsets.all(8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppColors.darkCardElevated,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.darkBorder),
-              ),
+            // Country code — inline, no heavy box
+            Padding(
+              padding: const EdgeInsets.only(left: 22),
               child: Row(
                 children: [
                   Text('🇮🇳', style: const TextStyle(fontSize: 18)),
@@ -246,12 +247,16 @@ class _PhoneInputCard extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: c.textPrimary,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.textMuted, size: 16),
+                  const SizedBox(width: 14),
+                  Container(
+                    width: 1,
+                    height: 22,
+                    color: c.border,
+                  ),
+                  const SizedBox(width: 14),
                 ],
               ),
             ),
@@ -266,28 +271,30 @@ class _PhoneInputCard extends StatelessWidget {
                   FilteringTextInputFormatter.digitsOnly,
                 ],
                 style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: c.textPrimary,
                   letterSpacing: 2,
                 ),
                 decoration: InputDecoration(
                   counterText: '',
+                  filled: true,
+                  fillColor: Colors.transparent,
                   hintText: '00000 00000',
                   hintStyle: GoogleFonts.poppins(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.w400,
-                    color: AppColors.textMuted,
+                    color: c.textHint,
                     letterSpacing: 2,
                   ),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 18),
                 ),
               ),
             ),
+            const SizedBox(width: 22),
           ],
         ),
       ),

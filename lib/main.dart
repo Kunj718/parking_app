@@ -14,7 +14,7 @@ void main() {
   ]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
+    statusBarIconBrightness: Brightness.dark,   // dark icons on white bg
     systemNavigationBarColor: Colors.transparent,
   ));
   runApp(const ParkingApp());
@@ -42,13 +42,16 @@ class ParkingApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Society Parking QR',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.dark,
-      home: _resolveHome(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AppState.instance.themeModeNotifier,
+      builder: (_, mode, __) => MaterialApp(
+        title: 'Society Parking QR',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        themeMode: mode,
+        home: _resolveHome(),
+      ),
     );
   }
 }

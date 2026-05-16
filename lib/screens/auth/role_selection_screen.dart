@@ -15,8 +15,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: c.bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -25,35 +26,32 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             children: [
               const SizedBox(height: 48),
               _header(),
-              const SizedBox(height: 25),
+              const SizedBox(height: 28),
               _RoleCard(
                 role: 'resident',
                 title: 'Resident',
                 subtitle:
                     'Manage your vehicle\'s QR code, add guests, and track parking status.',
                 icon: Icons.home_rounded,
-                gradient: AppColors.blueGradient,
+                accentColor: AppColors.electricBlue,
                 features: const ['Personal QR Code', 'Guest Entry', 'My Vehicles'],
                 isSelected: _selectedRole == 'resident',
                 onTap: () => setState(() => _selectedRole = 'resident'),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               _RoleCard(
                 role: 'admin',
                 title: 'Admin / Guard',
                 subtitle:
                     'Scan resident QR codes, oversee the live parking feed, and manage access.',
                 icon: Icons.shield_rounded,
-                gradient: AppColors.emeraldGradient,
+                accentColor: AppColors.emerald,
                 features: const ['QR Scanner', 'Live Feed Control', 'Full Access'],
                 isSelected: _selectedRole == 'admin',
                 onTap: () => setState(() => _selectedRole = 'admin'),
               ),
               const Spacer(),
-              _ContinueButton(
-                enabled: _selectedRole != null,
-                onTap: _proceed,
-              ),
+              _ContinueButton(enabled: _selectedRole != null, onTap: _proceed),
               const SizedBox(height: 24),
             ],
           ),
@@ -63,35 +61,34 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   }
 
   Widget _header() {
+    final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 48,
-          height: 48,
+          width: 46,
+          height: 46,
           decoration: BoxDecoration(
             gradient: const LinearGradient(colors: AppColors.blueGradient),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: const Icon(Icons.local_parking_rounded, color: Colors.white, size: 24),
+          child: const Icon(Icons.local_parking_rounded,
+              color: Colors.white, size: 22),
         ),
         const SizedBox(height: 24),
         Text(
           'Who are\nyou today?',
           style: GoogleFonts.poppins(
-            fontSize: 34,
+            fontSize: 32,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: c.textPrimary,
             height: 1.15,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Text(
           'Select your role to continue.',
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            color: AppColors.textSecondary,
-          ),
+          style: GoogleFonts.inter(fontSize: 15, color: c.textSecondary),
         ),
       ],
     );
@@ -99,7 +96,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
   void _proceed() {
     if (_selectedRole == null) return;
-    // Role selection only happens once — then push phone auth
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PhoneAuthScreen(role: _selectedRole!),
@@ -113,7 +109,7 @@ class _RoleCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
-  final List<Color> gradient;
+  final Color accentColor;
   final List<String> features;
   final bool isSelected;
   final VoidCallback onTap;
@@ -123,7 +119,7 @@ class _RoleCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.icon,
-    required this.gradient,
+    required this.accentColor,
     required this.features,
     required this.isSelected,
     required this.onTap,
@@ -131,56 +127,33 @@ class _RoleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        padding: const EdgeInsets.all(24),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.transparent : AppColors.darkCard,
-          gradient: isSelected
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    gradient.first.withOpacity(0.2),
-                    gradient.last.withOpacity(0.08),
-                  ],
-                )
-              : null,
-          borderRadius: BorderRadius.circular(24),
+          color: isSelected
+              ? accentColor.withValues(alpha: 0.05)
+              : c.card,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? gradient.first : AppColors.darkBorder,
+            color: isSelected ? accentColor : c.border,
             width: isSelected ? 1.5 : 1,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: gradient.first.withOpacity(0.2),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ]
-              : null,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 60,
-              height: 60,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: gradient),
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: gradient.first.withOpacity(0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                color: accentColor.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, color: Colors.white, size: 28),
+              child: Icon(icon, color: accentColor, size: 26),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -192,49 +165,50 @@ class _RoleCard extends StatelessWidget {
                       Text(
                         title,
                         style: GoogleFonts.poppins(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: c.textPrimary,
                         ),
                       ),
                       const Spacer(),
                       AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 22,
-                        height: 22,
+                        duration: const Duration(milliseconds: 180),
+                        width: 20,
+                        height: 20,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: isSelected ? gradient.first : Colors.transparent,
+                          color: isSelected ? accentColor : Colors.transparent,
                           border: Border.all(
-                            color: isSelected ? gradient.first : AppColors.darkBorder,
-                            width: 2,
+                            color: isSelected ? accentColor : c.border,
+                            width: 1.5,
                           ),
                         ),
                         child: isSelected
                             ? const Icon(Icons.check_rounded,
-                                color: Colors.white, size: 13)
+                                color: Colors.white, size: 12)
                             : null,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 5),
                   Text(
                     subtitle,
                     style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      color: c.textSecondary,
                       height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Wrap(
                     spacing: 6,
+                    runSpacing: 4,
                     children: features.map((f) {
                       return Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                            horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: gradient.first.withOpacity(0.1),
+                          color: accentColor.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -242,7 +216,7 @@ class _RoleCard extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
-                            color: gradient.first,
+                            color: accentColor,
                           ),
                         ),
                       );
@@ -266,36 +240,28 @@ class _ContinueButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return GestureDetector(
       onTap: enabled ? onTap : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           gradient: enabled
               ? const LinearGradient(colors: AppColors.blueGradient)
               : null,
-          color: enabled ? null : AppColors.darkCard,
-          borderRadius: BorderRadius.circular(18),
-          border: enabled ? null : Border.all(color: AppColors.darkBorder),
-          boxShadow: enabled
-              ? [
-                  BoxShadow(
-                    color: AppColors.electricBlue.withOpacity(0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ]
-              : null,
+          color: enabled ? null : c.cardElevated,
+          borderRadius: BorderRadius.circular(16),
+          border: enabled ? null : Border.all(color: c.border),
         ),
         child: Center(
           child: Text(
             enabled ? 'Continue →' : 'Select a role to continue',
             style: GoogleFonts.poppins(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: enabled ? Colors.white : AppColors.textMuted,
+              color: enabled ? Colors.white : c.textHint,
             ),
           ),
         ),

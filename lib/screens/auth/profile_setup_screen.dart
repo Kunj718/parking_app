@@ -6,6 +6,19 @@ import '../../theme/app_theme.dart';
 import '../../state/app_state.dart';
 import '../../navigation/main_navigation.dart';
 
+// ─── Per-vehicle mutable state ────────────────────────────────────────────────
+class _VehicleEntry {
+  final TextEditingController plateController = TextEditingController();
+  final TextEditingController modelController = TextEditingController();
+  String type = 'car';
+  String color = 'White';
+
+  void dispose() {
+    plateController.dispose();
+    modelController.dispose();
+  }
+}
+
 class ProfileSetupScreen extends StatefulWidget {
   final String phone;
   final String role;
@@ -34,15 +47,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _homeNumberController = TextEditingController();
   final _tenamentController = TextEditingController();
   final _parkingSlotController = TextEditingController();
-  final _towers = ['Tower A', 'Tower B', 'Tower C', 'Tower D', 'Wing 1', 'Wing 2'];
+  final _towers = ['Tower A', 'Tower B', 'Tower C', 'Tower D', 'Wing 1', 'Wing 2', 'Tenement'];
 
-  // Step 3 — Vehicle
+  // Step 3 — Vehicles (supports multiple)
   bool _hasVehicle = false;
-  String _vehicleType = 'car';
-  final _plateController = TextEditingController();
-  final _modelController = TextEditingController();
-  String _selectedColor = 'White';
-  final _colors = ['White', 'Black', 'Silver', 'Grey', 'Red', 'Blue', 'Green', 'Orange'];
+  final List<_VehicleEntry> _vehicleEntries = [_VehicleEntry()];
+  static const _colors = ['White', 'Black', 'Silver', 'Grey', 'Red', 'Blue', 'Green', 'Orange'];
 
   // Step 4 — QR Generated
   UserProfile? _generatedProfile;
@@ -57,8 +67,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     _homeNumberController.dispose();
     _tenamentController.dispose();
     _parkingSlotController.dispose();
-    _plateController.dispose();
-    _modelController.dispose();
+    for (final e in _vehicleEntries) {
+      e.dispose();
+    }
     super.dispose();
   }
 
@@ -108,16 +119,18 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
     final vehicles = <VehicleProfile>[];
     if (_hasVehicle) {
-      vehicles.add(VehicleProfile(
-        plateNumber: _plateController.text.trim().isEmpty
-            ? 'MH01AB1234'
-            : _plateController.text.trim().toUpperCase(),
-        model: _modelController.text.trim().isEmpty
-            ? 'My Vehicle'
-            : _modelController.text.trim(),
-        color: _selectedColor,
-        type: _vehicleType,
-      ));
+      for (final e in _vehicleEntries) {
+        vehicles.add(VehicleProfile(
+          plateNumber: e.plateController.text.trim().isEmpty
+              ? 'MH01AB1234'
+              : e.plateController.text.trim().toUpperCase(),
+          model: e.modelController.text.trim().isEmpty
+              ? 'My Vehicle'
+              : e.modelController.text.trim(),
+          color: e.color,
+          type: e.type,
+        ));
+      }
     }
 
     final profile = UserProfile(
@@ -158,8 +171,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: c.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -190,14 +204,16 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   ),
                   _Step3Vehicle(
                     hasVehicle: _hasVehicle,
-                    vehicleType: _vehicleType,
-                    plateController: _plateController,
-                    modelController: _modelController,
-                    selectedColor: _selectedColor,
+                    vehicleEntries: _vehicleEntries,
                     colors: _colors,
                     onHasVehicleChanged: (v) => setState(() => _hasVehicle = v),
-                    onTypeChanged: (v) => setState(() => _vehicleType = v),
-                    onColorChanged: (v) => setState(() => _selectedColor = v),
+                    onAddVehicle: () =>
+                        setState(() => _vehicleEntries.add(_VehicleEntry())),
+                    onRemoveVehicle: (i) => setState(() {
+                      _vehicleEntries[i].dispose();
+                      _vehicleEntries.removeAt(i);
+                    }),
+                    onRebuild: () => setState(() {}),
                   ),
                   _Step4QrGenerated(
                     profile: _generatedProfile,
@@ -244,6 +260,7 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final progress = currentStep >= totalSteps
         ? 1.0
         : (currentStep + 1) / totalSteps;
@@ -261,9 +278,9 @@ class _TopBar extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: AppColors.darkCard,
+                      color: c.card,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.darkBorder),
+                      border: Border.all(color: c.border),
                     ),
                     child: const Icon(Icons.arrow_back_rounded,
                         color: AppColors.textSecondary, size: 18),
@@ -278,7 +295,7 @@ class _TopBar extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
+                    color: c.textSecondary,
                   ),
                 ),
               const Spacer(),
@@ -292,7 +309,7 @@ class _TopBar extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 4,
-                backgroundColor: AppColors.darkBorder,
+                backgroundColor: c.border,
                 valueColor: const AlwaysStoppedAnimation(AppColors.electricBlue),
               ),
             ),
@@ -318,6 +335,7 @@ class _Step1PersonalInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
       child: Column(
@@ -330,13 +348,13 @@ class _Step1PersonalInfo extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: c.textPrimary,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             'This info will appear on your parking QR.',
-            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+            style: GoogleFonts.inter(fontSize: 14, color: c.textSecondary),
           ),
           const SizedBox(height: 32),
           _FormLabel(label: 'Full Name'),
@@ -362,20 +380,20 @@ class _Step1PersonalInfo extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: AppColors.darkCard,
+              color: c.card,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.darkBorder),
+              border: Border.all(color: c.border),
             ),
             child: Row(
               children: [
-                const Icon(Icons.phone_android_rounded,
-                    color: AppColors.textMuted, size: 20),
+                Icon(Icons.phone_android_rounded,
+                    color: c.textHint, size: 20),
                 const SizedBox(width: 12),
                 Text(
                   phone,
                   style: GoogleFonts.inter(
                     fontSize: 15,
-                    color: AppColors.textSecondary,
+                    color: c.textSecondary,
                     letterSpacing: 1,
                   ),
                 ),
@@ -423,8 +441,11 @@ class _Step2SocietyDetails extends StatelessWidget {
     required this.onTowerChanged,
   });
 
+  bool get _isTenement => selectedTower == 'Tenement';
+
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
       child: Column(
@@ -440,25 +461,24 @@ class _Step2SocietyDetails extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: c.textPrimary,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             'Guards use this to verify where you live in the society.',
-            style: GoogleFonts.inter(
-                fontSize: 14, color: AppColors.textSecondary),
+            style: GoogleFonts.inter(fontSize: 14, color: c.textSecondary),
           ),
           const SizedBox(height: 32),
 
-          // ── Tower / Wing ────────────────────────────────────────────────
-          _FormLabel(label: 'Tower / Wing'),
+          // ── Tower / Wing / Tenement ─────────────────────────────────────
+          _FormLabel(label: 'Tower / Wing / Tenement'),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: AppColors.darkCard,
+              color: c.card,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.darkBorder),
+              border: Border.all(color: c.border),
             ),
             child: DropdownButtonHideUnderline(
               child: ButtonTheme(
@@ -467,11 +487,11 @@ class _Step2SocietyDetails extends StatelessWidget {
                   value: selectedTower,
                   isExpanded: true,
                   borderRadius: BorderRadius.circular(14),
-                  dropdownColor: AppColors.darkCard,
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.textSecondary),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 2),
+                  dropdownColor: c.card,
+                  icon: Icon(Icons.keyboard_arrow_down_rounded,
+                      color: c.textSecondary),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   items: towers
                       .map((t) => DropdownMenuItem(
                             value: t,
@@ -480,7 +500,7 @@ class _Step2SocietyDetails extends StatelessWidget {
                               style: GoogleFonts.poppins(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.white,
+                                color: c.textPrimary,
                               ),
                             ),
                           ))
@@ -494,41 +514,65 @@ class _Step2SocietyDetails extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // ── Tenament No. ────────────────────────────────────────────────
-          _FormLabel(label: 'Tenament No.'),
-          const SizedBox(height: 4),
-          Text(
-            'Survey / tenament number from your agreement or society records',
-            style: GoogleFonts.inter(
-                fontSize: 11, color: AppColors.textMuted),
+          // ── Conditional field ───────────────────────────────────────────
+          // Tenement selected → show Tenement No. field
+          // Tower / Wing selected → show Home Number field
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SizeTransition(
+                sizeFactor: animation,
+                axisAlignment: -1,
+                child: child,
+              ),
+            ),
+            child: _isTenement
+                ? Column(
+                    key: const ValueKey('tenement_field'),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _FormLabel(label: 'Tenement No.'),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Survey / tenement number from your agreement or society records',
+                        style: GoogleFonts.inter(
+                            fontSize: 11, color: c.textHint),
+                      ),
+                      const SizedBox(height: 8),
+                      _StyledTextField(
+                        controller: tenamentController,
+                        hint: 'e.g. T-1234 or 56/A (optional)',
+                        icon: Icons.tag_rounded,
+                        textCapitalization: TextCapitalization.characters,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  )
+                : Column(
+                    key: const ValueKey('home_field'),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _FormLabel(label: 'Home Number'),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Flat no., house no., unit no. — whatever applies to you',
+                        style: GoogleFonts.inter(
+                            fontSize: 11, color: c.textHint),
+                      ),
+                      const SizedBox(height: 8),
+                      _StyledTextField(
+                        controller: homeNumberController,
+                        hint: 'e.g. 704, B-12, House 5',
+                        icon: Icons.home_outlined,
+                        textCapitalization: TextCapitalization.characters,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
           ),
-          const SizedBox(height: 8),
-          _StyledTextField(
-            controller: tenamentController,
-            hint: 'e.g. T-1234 or 56/A (optional)',
-            icon: Icons.tag_rounded,
-            textCapitalization: TextCapitalization.characters,
-          ),
-          const SizedBox(height: 20),
 
-          // ── Home Number ─────────────────────────────────────────────────
-          _FormLabel(label: 'Home Number'),
-          const SizedBox(height: 4),
-          Text(
-            'Flat no., house no., unit no. — whatever applies to you',
-            style: GoogleFonts.inter(
-                fontSize: 11, color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 8),
-          _StyledTextField(
-            controller: homeNumberController,
-            hint: 'e.g. 704, B-12, House 5',
-            icon: Icons.home_outlined,
-            textCapitalization: TextCapitalization.characters,
-          ),
-          const SizedBox(height: 20),
-
-          // ── Parking Slot ────────────────────────────────────────────────
+          // ── Parking Slot (always visible) ───────────────────────────────
           _FormLabel(label: 'Parking Slot'),
           const SizedBox(height: 8),
           _StyledTextField(
@@ -543,10 +587,10 @@ class _Step2SocietyDetails extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.electricBlue.withOpacity(0.08),
+              color: AppColors.electricBlue.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                  color: AppColors.electricBlue.withOpacity(0.2)),
+                  color: AppColors.electricBlue.withValues(alpha: 0.2)),
             ),
             child: Row(
               children: [
@@ -555,7 +599,7 @@ class _Step2SocietyDetails extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Your home number and tenament no. are encoded in your QR. Guards and residents see this when they scan.',
+                    'Your details are encoded in your QR. Guards see this when they scan.',
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: AppColors.electricBlueLight,
@@ -576,29 +620,26 @@ class _Step2SocietyDetails extends StatelessWidget {
 
 class _Step3Vehicle extends StatelessWidget {
   final bool hasVehicle;
-  final String vehicleType;
-  final TextEditingController plateController;
-  final TextEditingController modelController;
-  final String selectedColor;
+  final List<_VehicleEntry> vehicleEntries;
   final List<String> colors;
   final ValueChanged<bool> onHasVehicleChanged;
-  final ValueChanged<String> onTypeChanged;
-  final ValueChanged<String> onColorChanged;
+  final VoidCallback onAddVehicle;
+  final ValueChanged<int> onRemoveVehicle;
+  final VoidCallback onRebuild;
 
   const _Step3Vehicle({
     required this.hasVehicle,
-    required this.vehicleType,
-    required this.plateController,
-    required this.modelController,
-    required this.selectedColor,
+    required this.vehicleEntries,
     required this.colors,
     required this.onHasVehicleChanged,
-    required this.onTypeChanged,
-    required this.onColorChanged,
+    required this.onAddVehicle,
+    required this.onRemoveVehicle,
+    required this.onRebuild,
   });
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
       child: Column(
@@ -610,178 +651,124 @@ class _Step3Vehicle extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            'Your Vehicle',
+            'Your Vehicles',
             style: GoogleFonts.poppins(
               fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: c.textPrimary,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            'Link your vehicle to your parking pass.',
-            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+            'Link your vehicles to your parking pass.',
+            style: GoogleFonts.inter(fontSize: 14, color: c.textSecondary),
           ),
-          const SizedBox(height: 32),
-          // Has vehicle toggle
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'I own a vehicle',
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              Switch(
-                value: hasVehicle,
-                onChanged: onHasVehicleChanged,
-                activeColor: AppColors.electricBlue,
-                activeTrackColor: AppColors.electricBlue.withOpacity(0.3),
-                inactiveThumbColor: AppColors.textMuted,
-                inactiveTrackColor: AppColors.darkBorder,
-              ),
-            ],
-          ),
-          if (hasVehicle) ...[
-            const SizedBox(height: 24),
-            _FormLabel(label: 'Vehicle Type'),
-            const SizedBox(height: 8),
-            Row(
+          const SizedBox(height: 28),
+
+          // ── "I own a vehicle" toggle ────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: c.card,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: c.border),
+            ),
+            child: Row(
               children: [
                 Expanded(
-                  child: _TypeChip(
-                    label: 'Car',
-                    icon: Icons.directions_car_rounded,
-                    selected: vehicleType == 'car',
-                    onTap: () => onTypeChanged('car'),
+                  child: Text(
+                    'I own a vehicle',
+                    style: GoogleFonts.poppins(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: c.textPrimary,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _TypeChip(
-                    label: 'Bike',
-                    icon: Icons.two_wheeler_rounded,
-                    selected: vehicleType == 'bike',
-                    onTap: () => onTypeChanged('bike'),
-                  ),
+                Switch(
+                  value: hasVehicle,
+                  onChanged: onHasVehicleChanged,
+                  activeTrackColor: AppColors.electricBlue,
+                  inactiveThumbColor: AppColors.textMuted,
+                  inactiveTrackColor: c.cardElevated,
                 ),
               ],
             ),
+          ),
+
+          // ── Vehicle cards ───────────────────────────────────────────────
+          if (hasVehicle) ...[
             const SizedBox(height: 20),
-            _FormLabel(label: 'Number Plate'),
-            const SizedBox(height: 8),
-            _StyledTextField(
-              controller: plateController,
-              hint: 'e.g. MH 02 AB 1234',
-              icon: Icons.credit_card_rounded,
-              textCapitalization: TextCapitalization.characters,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9 ]')),
-                LengthLimitingTextInputFormatter(13),
-              ],
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                letterSpacing: 3,
-              ),
-            ),
-            const SizedBox(height: 20),
-            _FormLabel(label: 'Make & Model'),
-            const SizedBox(height: 8),
-            _StyledTextField(
-              controller: modelController,
-              hint: 'e.g. Honda City',
-              icon: Icons.drive_eta_rounded,
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 20),
-            _FormLabel(label: 'Vehicle Colour'),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: colors.map((c) {
-                final selected = c == selectedColor;
-                return GestureDetector(
-                  onTap: () => onColorChanged(c),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? AppColors.electricBlue
-                          : AppColors.darkCard,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: selected
-                            ? AppColors.electricBlue
-                            : AppColors.darkBorder,
+            ...List.generate(vehicleEntries.length, (i) {
+              final entry = vehicleEntries[i];
+              return _VehicleCard(
+                index: i,
+                entry: entry,
+                colors: colors,
+                canRemove: vehicleEntries.length > 1,
+                onRemove: () => onRemoveVehicle(i),
+                onRebuild: onRebuild,
+              );
+            }),
+
+            // ── Add Another Vehicle button ──────────────────────────────
+            GestureDetector(
+              onTap: onAddVehicle,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.electricBlue.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.electricBlue.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.add_circle_outline_rounded,
+                        color: AppColors.electricBlue, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Add Another Vehicle',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.electricBlue,
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: _colorFromName(c),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color: Colors.white.withOpacity(0.3)),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          c,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: selected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                            color: selected
-                                ? Colors.white
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
+                  ],
+                ),
+              ),
             ),
           ] else ...[
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.darkCard,
+                color: c.card,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.darkBorder),
+                border: Border.all(color: c.border),
               ),
               child: Column(
                 children: [
-                  const Icon(Icons.no_transfer_rounded,
-                      color: AppColors.textMuted, size: 36),
+                  Icon(Icons.no_transfer_rounded,
+                      color: c.textHint, size: 36),
                   const SizedBox(height: 10),
                   Text(
                     'No vehicle linked',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: AppColors.textSecondary,
+                      color: c.textSecondary,
                     ),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     'You can add one later from Settings.',
                     style: GoogleFonts.inter(
-                        fontSize: 12, color: AppColors.textMuted),
+                        fontSize: 12, color: c.textHint),
                   ),
                 ],
               ),
@@ -791,19 +778,230 @@ class _Step3Vehicle extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─── Single vehicle card ──────────────────────────────────────────────────────
+
+class _VehicleCard extends StatelessWidget {
+  final int index;
+  final _VehicleEntry entry;
+  final List<String> colors;
+  final bool canRemove;
+  final VoidCallback onRemove;
+  final VoidCallback onRebuild;
+
+  const _VehicleCard({
+    required this.index,
+    required this.entry,
+    required this.colors,
+    required this.canRemove,
+    required this.onRemove,
+    required this.onRebuild,
+  });
 
   Color _colorFromName(String name) {
     switch (name.toLowerCase()) {
-      case 'white': return Colors.white;
-      case 'black': return const Color(0xFF212121);
+      case 'white':  return const Color(0xFFE0E0E0);
+      case 'black':  return const Color(0xFF212121);
       case 'silver': return const Color(0xFFC0C0C0);
-      case 'grey': return Colors.grey;
-      case 'red': return Colors.red;
-      case 'blue': return Colors.blue;
-      case 'green': return Colors.green;
+      case 'grey':   return Colors.grey;
+      case 'red':    return Colors.red;
+      case 'blue':   return Colors.blue;
+      case 'green':  return Colors.green;
       case 'orange': return Colors.orange;
-      default: return AppColors.electricBlue;
+      default:       return AppColors.electricBlue;
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.colors;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: cs.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Card header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+            child: Row(
+              children: [
+                Icon(
+                  entry.type == 'bike'
+                      ? Icons.two_wheeler_rounded
+                      : Icons.directions_car_outlined,
+                  color: AppColors.electricBlue,
+                  size: 18,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Vehicle ${index + 1}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: cs.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                if (canRemove)
+                  GestureDetector(
+                    onTap: onRemove,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.danger.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.delete_outline_rounded,
+                          color: AppColors.danger, size: 16),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          Divider(height: 1, color: cs.divider),
+
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Type chips ────────────────────────────────────────
+                _FormLabel(label: 'Vehicle Type'),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _TypeChip(
+                        label: 'Car',
+                        icon: Icons.directions_car_rounded,
+                        selected: entry.type == 'car',
+                        onTap: () {
+                          entry.type = 'car';
+                          onRebuild();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _TypeChip(
+                        label: 'Bike',
+                        icon: Icons.two_wheeler_rounded,
+                        selected: entry.type == 'bike',
+                        onTap: () {
+                          entry.type = 'bike';
+                          onRebuild();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // ── Number plate ──────────────────────────────────────
+                _FormLabel(label: 'Number Plate'),
+                const SizedBox(height: 8),
+                _StyledTextField(
+                  controller: entry.plateController,
+                  hint: 'e.g. MH 02 AB 1234',
+                  icon: Icons.credit_card_rounded,
+                  textCapitalization: TextCapitalization.characters,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9 ]')),
+                    LengthLimitingTextInputFormatter(13),
+                  ],
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: cs.textPrimary,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // ── Make & Model ──────────────────────────────────────
+                _FormLabel(label: 'Make & Model'),
+                const SizedBox(height: 8),
+                _StyledTextField(
+                  controller: entry.modelController,
+                  hint: 'e.g. Honda City',
+                  icon: Icons.drive_eta_rounded,
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: 16),
+
+                // ── Colour ────────────────────────────────────────────
+                _FormLabel(label: 'Vehicle Colour'),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: colors.map((colorName) {
+                    final selected = colorName == entry.color;
+                    return GestureDetector(
+                      onTap: () {
+                        entry.color = colorName;
+                        onRebuild();
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? AppColors.electricBlue
+                              : cs.cardElevated,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: selected
+                                ? AppColors.electricBlue
+                                : cs.border,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: _colorFromName(colorName),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: cs.border, width: 0.5),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              colorName,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                color: selected
+                                    ? Colors.white
+                                    : cs.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -826,6 +1024,7 @@ class _Step4QrGenerated extends StatelessWidget {
       return _LoadingState();
     }
 
+    final c = context.colors;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
       child: Column(
@@ -854,7 +1053,7 @@ class _Step4QrGenerated extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 26,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: c.textPrimary,
             ),
           ),
           const SizedBox(height: 6),
@@ -863,7 +1062,7 @@ class _Step4QrGenerated extends StatelessWidget {
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: c.textSecondary,
               height: 1.5,
             ),
           ),
@@ -872,20 +1071,9 @@ class _Step4QrGenerated extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF1E2A60), Color(0xFF0D1442)],
-              ),
+              color: c.card,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.darkBorder),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.electricBlue.withOpacity(0.2),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+              border: Border.all(color: c.border),
             ),
             child: Column(
               children: [
@@ -908,7 +1096,7 @@ class _Step4QrGenerated extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: c.textPrimary,
                       ),
                     ),
                   ],
@@ -941,14 +1129,14 @@ class _Step4QrGenerated extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: c.textPrimary,
                   ),
                 ),
                 Text(
                   '${profile!.tower} · ${profile!.homeNumber}',
                   style: GoogleFonts.inter(
                     fontSize: 13,
-                    color: AppColors.textSecondary,
+                    color: c.textSecondary,
                   ),
                 ),
                 if (profile!.vehicles.isNotEmpty) ...[
@@ -1056,16 +1244,17 @@ class _Step4QrGenerated extends StatelessWidget {
 class _LoadingState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
+          const SizedBox(
             width: 64,
             height: 64,
             child: CircularProgressIndicator(
               strokeWidth: 3,
-              valueColor: const AlwaysStoppedAnimation(AppColors.electricBlue),
+              valueColor: AlwaysStoppedAnimation(AppColors.electricBlue),
             ),
           ),
           const SizedBox(height: 24),
@@ -1074,7 +1263,7 @@ class _LoadingState extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: c.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -1082,7 +1271,7 @@ class _LoadingState extends StatelessWidget {
             'Setting up your parking pass',
             style: GoogleFonts.inter(
               fontSize: 13,
-              color: AppColors.textSecondary,
+              color: c.textSecondary,
             ),
           ),
         ],
@@ -1132,7 +1321,7 @@ class _FormLabel extends StatelessWidget {
       style: GoogleFonts.poppins(
         fontSize: 10,
         fontWeight: FontWeight.w600,
-        color: AppColors.textSecondary,
+        color: context.colors.textSecondary,
         letterSpacing: 1.2,
       ),
     );
@@ -1160,6 +1349,7 @@ class _StyledTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
@@ -1168,12 +1358,12 @@ class _StyledTextField extends StatelessWidget {
       style: style ??
           GoogleFonts.inter(
             fontSize: 15,
-            color: Colors.white,
+            color: c.textPrimary,
             fontWeight: FontWeight.w500,
           ),
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
+        prefixIcon: Icon(icon, color: c.textSecondary, size: 20),
       ),
     );
   }
@@ -1194,6 +1384,7 @@ class _TypeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -1203,10 +1394,10 @@ class _TypeChip extends StatelessWidget {
           gradient: selected
               ? const LinearGradient(colors: AppColors.blueGradient)
               : null,
-          color: selected ? null : AppColors.darkCard,
+          color: selected ? null : c.cardElevated,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? AppColors.electricBlue : AppColors.darkBorder,
+            color: selected ? AppColors.electricBlue : c.border,
             width: selected ? 1.5 : 1,
           ),
           boxShadow: selected
@@ -1223,7 +1414,7 @@ class _TypeChip extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon,
-                color: selected ? Colors.white : AppColors.textSecondary,
+                color: selected ? Colors.white : c.textSecondary,
                 size: 20),
             const SizedBox(width: 8),
             Text(
@@ -1231,7 +1422,7 @@ class _TypeChip extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : AppColors.textSecondary,
+                color: selected ? Colors.white : c.textSecondary,
               ),
             ),
           ],
@@ -1256,14 +1447,15 @@ class _BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final isLast = currentStep == totalSteps - 1;
 
     return Container(
       padding: EdgeInsets.fromLTRB(
           24, 16, 24, 16 + MediaQuery.of(context).padding.bottom),
       decoration: BoxDecoration(
-        color: AppColors.darkBg,
-        border: const Border(top: BorderSide(color: AppColors.darkDivider)),
+        color: c.bg,
+        border: Border(top: BorderSide(color: c.divider)),
       ),
       child: GestureDetector(
         onTap: isSubmitting ? null : onNext,

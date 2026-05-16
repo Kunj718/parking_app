@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
-import '../../models/mock_data.dart';
 import '../../state/app_state.dart';
 import '../../widgets/qr_card_widget.dart';
 import '../../widgets/quick_action_card.dart';
-import '../../widgets/guest_entry_modal.dart';
 
 class DashboardScreen extends StatelessWidget {
   final String role;
@@ -14,18 +12,19 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final profile = AppState.instance.currentUser;
     if (profile == null) {
-      return const Scaffold(
-        backgroundColor: AppColors.darkBg,
-        body: Center(
+      return Scaffold(
+        backgroundColor: c.bg,
+        body: const Center(
           child: CircularProgressIndicator(color: AppColors.electricBlue),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: c.bg,
       body: CustomScrollView(
         slivers: [
           _AppBar(profile: profile),
@@ -37,12 +36,9 @@ class DashboardScreen extends StatelessWidget {
                 _StatRow(vehicleCount: profile.vehicles.length),
                 const SizedBox(height: 20),
                 if (profile.vehicles.isNotEmpty)
-                  QuickActionCard(
-                    vehicle: profile.vehicles.first,
-                    onAddGuest: () => GuestEntryModal.show(context),
-                  )
+                  QuickActionCard(vehicle: profile.vehicles.first)
                 else
-                  _NoVehicleBanner(onAddGuest: () => GuestEntryModal.show(context)),
+                  const _NoVehicleBanner(),
                 const SizedBox(height: 24),
                 _SectionHeader(title: 'My Parking QR', action: 'Share'),
                 const SizedBox(height: 12),
@@ -73,8 +69,6 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-// ── App bar ────────────────────────────────────────────────────────────────────
-
 class _AppBar extends StatelessWidget {
   final UserProfile profile;
 
@@ -89,8 +83,9 @@ class _AppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return SliverAppBar(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: c.bg,
       floating: true,
       pinned: false,
       expandedHeight: 0,
@@ -107,7 +102,7 @@ class _AppBar extends StatelessWidget {
                   _greeting,
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: c.textSecondary,
                   ),
                 ),
                 Text(
@@ -115,7 +110,7 @@ class _AppBar extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
+                    color: c.textPrimary,
                   ),
                 ),
               ],
@@ -134,18 +129,19 @@ class _AppBar extends StatelessWidget {
 class _NotificationBell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Stack(
       children: [
         Container(
           width: 38,
           height: 38,
           decoration: BoxDecoration(
-            color: AppColors.darkCard,
+            color: c.card,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: c.border),
           ),
-          child: const Icon(Icons.notifications_outlined,
-              color: AppColors.textMuted, size: 18),
+          child: Icon(Icons.notifications_outlined,
+              color: c.textHint, size: 18),
         ),
         Positioned(
           top: 9,
@@ -175,9 +171,9 @@ class _Avatar extends StatelessWidget {
       width: 38,
       height: 38,
       decoration: BoxDecoration(
-        color: AppColors.electricBlue.withValues(alpha: 0.15),
+        color: AppColors.electricBlue.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.electricBlue.withValues(alpha: 0.25)),
+        border: Border.all(color: AppColors.electricBlue.withValues(alpha: 0.2)),
       ),
       child: Center(
         child: Text(
@@ -193,8 +189,6 @@ class _Avatar extends StatelessWidget {
   }
 }
 
-// ── Stat row ───────────────────────────────────────────────────────────────────
-
 class _StatRow extends StatelessWidget {
   final int vehicleCount;
 
@@ -202,23 +196,15 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Row(
       children: [
-        Expanded(
-          child: _StatCard(
-            label: 'Active Guests',
-            value: '${MockData.guestEntries.where((e) => !e.isExpired).length}',
-            icon: Icons.people_outline_rounded,
-            color: AppColors.electricBlue,
-          ),
-        ),
-        const SizedBox(width: 10),
         Expanded(
           child: _StatCard(
             label: 'My Vehicles',
             value: '$vehicleCount',
             icon: Icons.directions_car_outlined,
-            color: AppColors.emerald,
+            color: AppColors.electricBlue,
           ),
         ),
         const SizedBox(width: 10),
@@ -227,7 +213,16 @@ class _StatRow extends StatelessWidget {
             label: 'QR Scans',
             value: '14',
             icon: Icons.qr_code_rounded,
-            color: AppColors.textSecondary,
+            color: AppColors.emerald,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _StatCard(
+            label: 'Entry Today',
+            value: '27',
+            icon: Icons.login_rounded,
+            color: c.textSecondary,
           ),
         ),
       ],
@@ -250,12 +245,13 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: c.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: c.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -267,14 +263,14 @@ class _StatCard extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: c.textPrimary,
             ),
           ),
           Text(
             label,
             style: GoogleFonts.inter(
               fontSize: 10,
-              color: AppColors.textMuted,
+              color: c.textSecondary,
             ),
           ),
         ],
@@ -283,26 +279,23 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ── No vehicle banner ──────────────────────────────────────────────────────────
-
 class _NoVehicleBanner extends StatelessWidget {
-  final VoidCallback onAddGuest;
-
-  const _NoVehicleBanner({required this.onAddGuest});
+  const _NoVehicleBanner();
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.darkBorder),
+        color: c.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: c.border),
       ),
       child: Row(
         children: [
-          const Icon(Icons.directions_car_outlined,
-              color: AppColors.textMuted, size: 22),
+          Icon(Icons.directions_car_outlined,
+              color: c.textHint, size: 22),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -313,14 +306,14 @@ class _NoVehicleBanner extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: Colors.white,
+                    color: c.textPrimary,
                   ),
                 ),
                 Text(
-                  'Add a vehicle in Settings to enable guest access.',
+                  'Add a vehicle in Settings to get started.',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: c.textSecondary,
                   ),
                 ),
               ],
@@ -332,8 +325,6 @@ class _NoVehicleBanner extends StatelessWidget {
   }
 }
 
-// ── Section header ─────────────────────────────────────────────────────────────
-
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String action;
@@ -342,6 +333,7 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -350,7 +342,7 @@ class _SectionHeader extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: c.textPrimary,
           ),
         ),
         GestureDetector(
@@ -368,8 +360,6 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-// ── Vehicle tile ───────────────────────────────────────────────────────────────
-
 class _VehicleTile extends StatelessWidget {
   final VehicleProfile vehicle;
   final bool isPrimary;
@@ -378,6 +368,7 @@ class _VehicleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final isBike = vehicle.type == 'bike' ||
         vehicle.model.toLowerCase().contains('bike') ||
         vehicle.model.toLowerCase().contains('enfield');
@@ -385,15 +376,15 @@ class _VehicleTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: c.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: c.border),
       ),
       child: Row(
         children: [
           Icon(
             isBike ? Icons.two_wheeler_rounded : Icons.directions_car_outlined,
-            color: AppColors.textSecondary,
+            color: c.textHint,
             size: 20,
           ),
           const SizedBox(width: 14),
@@ -406,14 +397,14 @@ class _VehicleTile extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Colors.white,
+                    color: c.textPrimary,
                   ),
                 ),
                 Text(
                   '${vehicle.plateNumber} · ${vehicle.color}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: c.textSecondary,
                     letterSpacing: 0.3,
                   ),
                 ),
@@ -422,24 +413,25 @@ class _VehicleTile extends StatelessWidget {
           ),
           if (isPrimary)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: AppColors.darkCardElevated,
+                color: c.cardElevated,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AppColors.darkBorder),
+                border: Border.all(color: c.border),
               ),
               child: Text(
                 'Primary',
                 style: GoogleFonts.inter(
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
+                  color: c.textSecondary,
                 ),
               ),
             ),
           const SizedBox(width: 8),
-          const Icon(Icons.chevron_right_rounded,
-              color: AppColors.textMuted, size: 18),
+          Icon(Icons.chevron_right_rounded,
+              color: c.textHint, size: 18),
         ],
       ),
     );

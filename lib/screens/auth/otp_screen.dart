@@ -48,9 +48,6 @@ class _OtpScreenState extends State<OtpScreen>
       curve: Curves.elasticOut,
     );
     _startResendTimer();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNodes[0].requestFocus();
-    });
   }
 
   @override
@@ -138,7 +135,7 @@ class _OtpScreenState extends State<OtpScreen>
     final minHeight = mq.size.height - mq.padding.top - mq.padding.bottom;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: context.colors.bg,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -180,6 +177,7 @@ class _OtpScreenState extends State<OtpScreen>
   }
 
   Widget _headerSection() {
+    final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -199,7 +197,7 @@ class _OtpScreenState extends State<OtpScreen>
           style: GoogleFonts.poppins(
             fontSize: 32,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: c.textPrimary,
             height: 1.2,
           ),
         ),
@@ -207,7 +205,7 @@ class _OtpScreenState extends State<OtpScreen>
         RichText(
           text: TextSpan(
             style: GoogleFonts.inter(
-                fontSize: 15, color: AppColors.textSecondary, height: 1.5),
+                fontSize: 15, color: c.textSecondary, height: 1.5),
             children: [
               const TextSpan(text: 'We sent a 6-digit OTP to '),
               TextSpan(
@@ -215,7 +213,7 @@ class _OtpScreenState extends State<OtpScreen>
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: c.textPrimary,
                 ),
               ),
             ],
@@ -241,12 +239,13 @@ class _OtpScreenState extends State<OtpScreen>
   }
 
   Widget _resendRow() {
+    final c = context.colors;
     return Center(
       child: _resendSeconds > 0
           ? RichText(
               text: TextSpan(
                 style: GoogleFonts.inter(
-                    fontSize: 14, color: AppColors.textSecondary),
+                    fontSize: 14, color: c.textSecondary),
                 children: [
                   const TextSpan(text: 'Resend OTP in '),
                   TextSpan(
@@ -321,6 +320,7 @@ class _OtpBoxState extends State<_OtpBox> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final isFocused = widget.focusNode.hasFocus;
 
     final borderColor = widget.isSuccess
@@ -329,66 +329,75 @@ class _OtpBoxState extends State<_OtpBox> {
             ? AppColors.danger
             : isFocused
                 ? AppColors.electricBlue
-                : AppColors.darkBorder;
-
-    final bgColor = widget.isSuccess
-        ? AppColors.successDim
-        : widget.isError
-            ? AppColors.dangerDim
-            : isFocused
-                ? AppColors.darkCardElevated
-                : AppColors.darkCard;
+                : c.border;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
-      width: 48,
-      height: 58,
+      width: 50,
+      height: 60,
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: borderColor,
           width: isFocused ? 2 : 1,
         ),
-        boxShadow: isFocused
-            ? [
-                BoxShadow(
-                  color: AppColors.electricBlue.withOpacity(0.25),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      // TextField is built once and lives here permanently —
-      // it is NOT inside any ListenableBuilder or rebuilding wrapper.
-      child: TextField(
-        controller: widget.controller,
-        focusNode: widget.focusNode,
-        textAlign: TextAlign.center,
-        keyboardType: TextInputType.number,
-        maxLength: 1,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        // Explicit white cursor so it's visible on the dark background
-        cursorColor: Colors.white,
-        cursorWidth: 2,
-        // Prevent context menu (copy/paste) from popping up in OTP boxes
-        contextMenuBuilder: (_, __) => const SizedBox.shrink(),
-        style: GoogleFonts.poppins(
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
-          // White text so it's always visible on the dark card background
-          color: widget.isSuccess ? AppColors.emerald : Colors.white,
-        ),
-        decoration: const InputDecoration(
-          counterText: '',
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          contentPadding: EdgeInsets.zero,
-          isDense: true,
-        ),
-        onChanged: widget.onChanged,
+      // Stack keeps the hint centered independently of TextField metrics.
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // "0" hint — visible only when the box is empty
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: widget.controller,
+            builder: (_, value, __) {
+              if (value.text.isNotEmpty) return const SizedBox.shrink();
+              return Text(
+                '0',
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w400,
+                  color: c.textHint,
+                ),
+              );
+            },
+          ),
+          // TextField — transparent bg, no built-in hint
+          TextField(
+            controller: widget.controller,
+            focusNode: widget.focusNode,
+            textAlign: TextAlign.center,
+            textAlignVertical: TextAlignVertical.center,
+            keyboardType: TextInputType.number,
+            maxLength: 1,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            cursorColor: AppColors.electricBlue,
+            cursorWidth: 2,
+            contextMenuBuilder: (_, __) => const SizedBox.shrink(),
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: widget.isSuccess ? AppColors.emerald : c.textPrimary,
+            ),
+            decoration: const InputDecoration(
+              counterText: '',
+              filled: true,
+              fillColor: Colors.transparent,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              isCollapsed: true,
+            ),
+            onChanged: widget.onChanged,
+          ),
+        ],
       ),
     );
   }
@@ -516,15 +525,16 @@ class _VerifyButton extends StatelessWidget {
 class _BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return GestureDetector(
       onTap: () => Navigator.of(context).pop(),
       child: Container(
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: AppColors.darkCard,
+          color: c.card,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.darkBorder),
+          border: Border.all(color: c.border),
         ),
         child: const Icon(Icons.arrow_back_rounded,
             color: AppColors.textSecondary, size: 20),

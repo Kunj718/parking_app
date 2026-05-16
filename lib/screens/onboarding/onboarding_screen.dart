@@ -21,7 +21,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Smart Parking\nfor Your Society',
       subtitle:
           'Manage resident and guest vehicles with a tap. No more chaos at the gate.',
-      gradientColors: [Color(0xFF1A237E), Color(0xFF0D2060)],
+      bgColors: [Color(0xFFEEF3FF), Color(0xFFF5F8FF)],
       accentColor: AppColors.electricBlue,
       icon: Icons.local_parking_rounded,
     ),
@@ -29,7 +29,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'QR-Powered\nEntry System',
       subtitle:
           'Each resident gets a unique QR code. Guards scan to verify identity instantly.',
-      gradientColors: [Color(0xFF0A3D2E), Color(0xFF051A14)],
+      bgColors: [Color(0xFFEBFAF7), Color(0xFFF3FBF9)],
       accentColor: AppColors.emerald,
       icon: Icons.qr_code_scanner_rounded,
     ),
@@ -37,8 +37,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Real-Time\nGuest Tracking',
       subtitle:
           'Know who is parked, for how long, and whose guest they are — all live.',
-      gradientColors: [Color(0xFF2A1A4E), Color(0xFF140A2A)],
-      accentColor: Color(0xFFAB47BC),
+      bgColors: [Color(0xFFF3EEFF), Color(0xFFF8F5FF)],
+      accentColor: Color(0xFF7C4DFF),
       icon: Icons.sensors_rounded,
     ),
   ];
@@ -51,8 +51,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: c.bg,
       body: Stack(
         children: [
           PageView.builder(
@@ -61,7 +62,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             itemCount: _slides.length,
             itemBuilder: (_, i) => _SlidePage(data: _slides[i]),
           ),
-          // Bottom controls
           Positioned(
             left: 0,
             right: 0,
@@ -73,25 +73,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               onFinish: _goToRoleSelection,
             ),
           ),
-          // Skip button
           Positioned(
             top: MediaQuery.of(context).padding.top + 16,
             right: 24,
             child: GestureDetector(
               onTap: _goToRoleSelection,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: c.card,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.15)),
+                  border: Border.all(color: c.border),
                 ),
                 child: Text(
                   'Skip',
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: Colors.white70,
+                    color: c.textSecondary,
                   ),
                 ),
               ),
@@ -113,14 +113,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 class _SlideData {
   final String title;
   final String subtitle;
-  final List<Color> gradientColors;
+  final List<Color> bgColors;
   final Color accentColor;
   final IconData icon;
 
   const _SlideData({
     required this.title,
     required this.subtitle,
-    required this.gradientColors,
+    required this.bgColors,
     required this.accentColor,
     required this.icon,
   });
@@ -133,12 +133,13 @@ class _SlidePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: data.gradientColors,
+          colors: data.bgColors,
         ),
       ),
       child: SafeArea(
@@ -147,17 +148,15 @@ class _SlidePage extends StatelessWidget {
           child: Column(
             children: [
               const Spacer(flex: 2),
-              // Illustration area
               _IllustrationCircle(color: data.accentColor, icon: data.icon),
               const Spacer(flex: 2),
-              // Text
               Text(
                 data.title,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
-                  fontSize: 32,
+                  fontSize: 30,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: c.textPrimary,
                   height: 1.2,
                 ),
               ),
@@ -166,8 +165,8 @@ class _SlidePage extends StatelessWidget {
                 data.subtitle,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
-                  fontSize: 16,
-                  color: Colors.white.withOpacity(0.65),
+                  fontSize: 15,
+                  color: c.textSecondary,
                   height: 1.6,
                 ),
               ),
@@ -191,38 +190,31 @@ class _IllustrationCircle extends StatelessWidget {
     return Stack(
       alignment: Alignment.center,
       children: [
-        // Outer glow ring
         Container(
-          width: 260,
-          height: 260,
+          width: 240,
+          height: 240,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: color.withOpacity(0.1), width: 1),
+            border: Border.all(color: color.withValues(alpha: 0.08), width: 1),
           ),
         ),
         Container(
-          width: 210,
-          height: 210,
+          width: 190,
+          height: 190,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: color.withOpacity(0.18), width: 1.5),
+            border: Border.all(color: color.withValues(alpha: 0.14), width: 1.5),
           ),
         ),
-        // Main circle
         Container(
-          width: 160,
-          height: 160,
+          width: 140,
+          height: 140,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [
-                color.withOpacity(0.3),
-                color.withOpacity(0.05),
-              ],
-            ),
-            border: Border.all(color: color.withOpacity(0.4), width: 1.5),
+            color: color.withValues(alpha: 0.10),
+            border: Border.all(color: color.withValues(alpha: 0.25), width: 1.5),
           ),
-          child: Icon(icon, color: color, size: 64),
+          child: Icon(icon, color: color, size: 56),
         ),
       ],
     );
@@ -244,6 +236,7 @@ class _BottomControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final isLast = currentPage == total - 1;
 
     return Container(
@@ -259,13 +252,13 @@ class _BottomControls extends StatelessWidget {
           SmoothPageIndicator(
             controller: controller,
             count: total,
-            effect: const ExpandingDotsEffect(
+            effect: ExpandingDotsEffect(
               dotHeight: 8,
               dotWidth: 8,
               expansionFactor: 3,
               spacing: 6,
               activeDotColor: AppColors.electricBlue,
-              dotColor: AppColors.darkBorder,
+              dotColor: c.border,
             ),
           ),
           GestureDetector(
@@ -276,23 +269,16 @@ class _BottomControls extends StatelessWidget {
                       curve: Curves.easeInOut,
                     ),
             child: Container(
-              width: 64,
-              height: 64,
+              width: 60,
+              height: 60,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(colors: AppColors.blueGradient),
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.electricBlue.withOpacity(0.4),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
               ),
               child: Icon(
                 isLast ? Icons.check_rounded : Icons.arrow_forward_rounded,
                 color: Colors.white,
-                size: 28,
+                size: 26,
               ),
             ),
           ),

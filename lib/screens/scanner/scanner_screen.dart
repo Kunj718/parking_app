@@ -331,10 +331,11 @@ class _ScanResultSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.darkCard,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       padding: EdgeInsets.fromLTRB(
           24, 0, 24, 24 + MediaQuery.of(context).padding.bottom),
@@ -348,7 +349,7 @@ class _ScanResultSheet extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.darkBorder,
+                color: c.border,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -379,14 +380,14 @@ class _ScanResultSheet extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: c.textPrimary,
             ),
           ),
           Text(
             'Registered society member',
             style: GoogleFonts.inter(
               fontSize: 13,
-              color: AppColors.textSecondary,
+              color: c.textSecondary,
             ),
           ),
           const SizedBox(height: 24),
@@ -394,11 +395,9 @@ class _ScanResultSheet extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF1E2A47), Color(0xFF141E38)],
-              ),
+              color: c.cardElevated,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.darkBorder),
+              border: Border.all(color: c.border),
             ),
             child: Column(
               children: [
@@ -435,14 +434,14 @@ class _ScanResultSheet extends StatelessWidget {
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: c.textPrimary,
                           ),
                         ),
                         Text(
                           '${profile.tower} · ${profile.homeNumber}',
                           style: GoogleFonts.inter(
                             fontSize: 13,
-                            color: AppColors.textSecondary,
+                            color: c.textSecondary,
                           ),
                         ),
                       ],
@@ -450,21 +449,21 @@ class _ScanResultSheet extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Divider(color: AppColors.darkBorder, height: 1),
+                Divider(color: c.border, height: 1),
                 const SizedBox(height: 16),
                 // Contact
                 _InfoRow(
                   icon: Icons.phone_android_rounded,
                   label: 'Mobile',
                   value: profile.phone,
-                  valueColor: Colors.white,
+                  valueColor: c.textPrimary,
                 ),
                 const SizedBox(height: 12),
                 _InfoRow(
                   icon: Icons.apartment_rounded,
                   label: 'Address',
                   value: '${profile.tower}, ${profile.homeNumber}',
-                  valueColor: Colors.white,
+                  valueColor: c.textPrimary,
                 ),
                 if (profile.hasTenament) ...[
                   const SizedBox(height: 12),
@@ -477,7 +476,7 @@ class _ScanResultSheet extends StatelessWidget {
                 ],
                 if (profile.hasVehicle) ...[
                   const SizedBox(height: 16),
-                  const Divider(color: AppColors.darkBorder, height: 1),
+                  Divider(color: c.border, height: 1),
                   const SizedBox(height: 16),
                   Row(
                     children: [
@@ -494,7 +493,7 @@ class _ScanResultSheet extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
+                          color: c.textSecondary,
                         ),
                       ),
                     ],
@@ -511,14 +510,14 @@ class _ScanResultSheet extends StatelessWidget {
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: c.textPrimary,
                               ),
                             ),
                             Text(
                               profile.vehicleColor,
                               style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: AppColors.textSecondary,
+                                color: c.textSecondary,
                               ),
                             ),
                           ],
@@ -529,18 +528,18 @@ class _ScanResultSheet extends StatelessWidget {
                   ),
                 ] else ...[
                   const SizedBox(height: 16),
-                  const Divider(color: AppColors.darkBorder, height: 1),
+                  Divider(color: c.border, height: 1),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Icon(Icons.no_transfer_rounded,
-                          color: AppColors.textMuted, size: 16),
+                      Icon(Icons.no_transfer_rounded,
+                          color: c.textHint, size: 16),
                       const SizedBox(width: 8),
                       Text(
                         'No vehicle registered',
                         style: GoogleFonts.inter(
                           fontSize: 13,
-                          color: AppColors.textMuted,
+                          color: c.textHint,
                         ),
                       ),
                     ],
@@ -559,9 +558,9 @@ class _ScanResultSheet extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: AppColors.darkCardElevated,
+                      color: c.cardElevated,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.darkBorder),
+                      border: Border.all(color: c.border),
                     ),
                     child: Center(
                       child: Text(
@@ -569,7 +568,7 @@ class _ScanResultSheet extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
+                          color: c.textSecondary,
                         ),
                       ),
                     ),
@@ -630,13 +629,14 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Row(
       children: [
-        Icon(icon, size: 15, color: AppColors.textMuted),
+        Icon(icon, size: 15, color: c.textHint),
         const SizedBox(width: 8),
         Text(
           '$label: ',
-          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+          style: GoogleFonts.inter(fontSize: 13, color: c.textSecondary),
         ),
         Expanded(
           child: Text(

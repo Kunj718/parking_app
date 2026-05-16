@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../screens/dashboard/dashboard_screen.dart';
-import '../screens/live_feed/live_feed_screen.dart';
 import '../screens/scanner/scanner_screen.dart';
 import '../screens/settings/settings_screen.dart';
 
@@ -21,20 +20,19 @@ class _MainNavigationState extends State<MainNavigation> {
   late final List<_NavItem> _items = [
     _NavItem(icon: Icons.grid_view_rounded, label: 'Dashboard'),
     _NavItem(icon: Icons.qr_code_scanner_rounded, label: 'Scanner'),
-    _NavItem(icon: Icons.sensors_rounded, label: 'Live Feed'),
     _NavItem(icon: Icons.settings_outlined, label: 'Settings'),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: c.bg,
       body: IndexedStack(
         index: _currentIndex,
         children: [
           DashboardScreen(role: widget.role),
           const ScannerScreen(),
-          const LiveFeedScreen(),
           const SettingsScreen(),
         ],
       ),
@@ -67,20 +65,21 @@ class _BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Container(
       margin: EdgeInsets.fromLTRB(16, 0, 16, bottomPad > 0 ? bottomPad : 16),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
+        color: c.card,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: c.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.07),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -91,7 +90,7 @@ class _BottomNavBar extends StatelessWidget {
           final item = e.value;
           final selected = i == currentIndex;
 
-          // Scanner tab — slightly larger icon, no glow
+          // Scanner tab (index 1) gets the pill treatment
           if (i == 1) {
             return _ScannerTab(selected: selected, onTap: () => onTap(i));
           }
@@ -108,16 +107,18 @@ class _NavTab extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _NavTab({required this.item, required this.selected, required this.onTap});
+  const _NavTab(
+      {required this.item, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 7),
         decoration: BoxDecoration(
           color: selected
               ? AppColors.electricBlue.withValues(alpha: 0.08)
@@ -129,7 +130,7 @@ class _NavTab extends StatelessWidget {
           children: [
             Icon(
               item.icon,
-              color: selected ? AppColors.electricBlue : AppColors.textMuted,
+              color: selected ? AppColors.electricBlue : c.textHint,
               size: 20,
             ),
             const SizedBox(height: 3),
@@ -138,7 +139,7 @@ class _NavTab extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 10,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                color: selected ? AppColors.electricBlue : AppColors.textMuted,
+                color: selected ? AppColors.electricBlue : c.textHint,
               ),
             ),
           ],
@@ -156,6 +157,7 @@ class _ScannerTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -167,17 +169,18 @@ class _ScannerTab extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               color: selected
-                  ? AppColors.electricBlue.withValues(alpha: 0.12)
-                  : AppColors.darkCardElevated,
+                  ? AppColors.electricBlue
+                  : c.cardElevated,
               shape: BoxShape.circle,
               border: Border.all(
-                color: selected ? AppColors.electricBlue : AppColors.darkBorder,
+                color:
+                    selected ? AppColors.electricBlue : c.border,
                 width: 1.5,
               ),
             ),
             child: Icon(
               Icons.qr_code_scanner_rounded,
-              color: selected ? AppColors.electricBlue : AppColors.textMuted,
+              color: selected ? Colors.white : c.textHint,
               size: 20,
             ),
           ),
@@ -187,7 +190,7 @@ class _ScannerTab extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 10,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              color: selected ? AppColors.electricBlue : AppColors.textMuted,
+              color: selected ? AppColors.electricBlue : c.textHint,
             ),
           ),
         ],

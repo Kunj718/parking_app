@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class VehicleProfile {
   final String plateNumber;
   final String model;
@@ -121,4 +123,11 @@ class AppState {
   bool isLoggedIn = false;
   String selectedRole = 'resident';
   UserProfile? currentUser;
+
+  // Reactive theme mode — listened to by MaterialApp in main.dart
+  final ValueNotifier<ThemeMode> themeModeNotifier =
+      ValueNotifier(ThemeMode.light);
+
+  ThemeMode get themeMode => themeModeNotifier.value;
+  set themeMode(ThemeMode mode) => themeModeNotifier.value = mode;
 }

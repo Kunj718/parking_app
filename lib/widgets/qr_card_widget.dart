@@ -11,35 +11,41 @@ class QrCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.darkCard,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.darkBorder),
+        color: c.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: c.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          _cardHeader(),
+          _cardHeader(c),
           const SizedBox(height: 20),
-          _qrSection(),
+          _qrSection(c),
           const SizedBox(height: 18),
-          _cardFooter(),
+          _cardFooter(c),
         ],
       ),
     );
   }
 
-  Widget _cardHeader() {
+  Widget _cardHeader(AppColorScheme c) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
-            color: AppColors.electricBlue.withValues(alpha: 0.12),
+            color: AppColors.electricBlue.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-                color: AppColors.electricBlue.withValues(alpha: 0.2)),
           ),
           child: Icon(Icons.local_parking_rounded,
               color: AppColors.electricBlue, size: 18),
@@ -53,14 +59,14 @@ class QrCardWidget extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: c.textPrimary,
               ),
             ),
             Text(
               'Society Parking System',
               style: GoogleFonts.inter(
                 fontSize: 10,
-                color: AppColors.textMuted,
+                color: c.textSecondary,
               ),
             ),
           ],
@@ -99,12 +105,13 @@ class QrCardWidget extends StatelessWidget {
     );
   }
 
-  Widget _qrSection() {
+  Widget _qrSection(AppColorScheme c) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: c.cardElevated,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.border),
       ),
       child: QrImageView(
         data: profile.qrData,
@@ -123,7 +130,7 @@ class QrCardWidget extends StatelessWidget {
     );
   }
 
-  Widget _cardFooter() {
+  Widget _cardFooter(AppColorScheme c) {
     return Row(
       children: [
         Expanded(
@@ -135,7 +142,7 @@ class QrCardWidget extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: c.textPrimary,
                 ),
               ),
               const SizedBox(height: 2),
@@ -143,7 +150,7 @@ class QrCardWidget extends StatelessWidget {
                 '${profile.tower} · ${profile.homeNumber}',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: AppColors.textMuted,
+                  color: c.textSecondary,
                 ),
               ),
             ],
@@ -152,16 +159,16 @@ class QrCardWidget extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: AppColors.darkCardElevated,
+            color: c.cardElevated,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: c.border),
           ),
           child: Text(
             profile.homeNumber,
             style: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: c.textSecondary,
               letterSpacing: 0.5,
             ),
           ),
@@ -212,7 +219,7 @@ class QrCardActions extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg, style: GoogleFonts.inter(color: Colors.white)),
-        backgroundColor: AppColors.darkCard,
+        backgroundColor: context.colors.textPrimary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -235,26 +242,27 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isPrimary
-              ? AppColors.electricBlue.withValues(alpha: 0.10)
-              : AppColors.darkCard,
+              ? AppColors.electricBlue.withValues(alpha: 0.08)
+              : c.card,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isPrimary
-                ? AppColors.electricBlue.withValues(alpha: 0.25)
-                : AppColors.darkBorder,
+                ? AppColors.electricBlue.withValues(alpha: 0.2)
+                : c.border,
           ),
         ),
         child: Column(
           children: [
             Icon(
               icon,
-              color: isPrimary ? AppColors.electricBlue : AppColors.textSecondary,
+              color: isPrimary ? AppColors.electricBlue : c.textSecondary,
               size: 18,
             ),
             const SizedBox(height: 4),
@@ -263,8 +271,7 @@ class _ActionButton extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color:
-                    isPrimary ? AppColors.electricBlue : AppColors.textSecondary,
+                color: isPrimary ? AppColors.electricBlue : c.textSecondary,
               ),
             ),
           ],
