@@ -34,6 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           role: 'resident',
           vehicles: [],
         );
+    final isAdmin = resident.role == 'admin';
 
     return Scaffold(
       backgroundColor: t.scaffoldBackgroundColor,
@@ -98,29 +99,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                _SettingsGroup(
-                  title: 'Account',
-                  tiles: [
-                    _NavTile(
-                      icon: Icons.directions_car_outlined,
-                      iconColor: AppColors.electricBlue,
-                      title: 'My Vehicles',
-                      subtitle: '${resident.vehicles.length} registered',
-                    ),
-                    _NavTile(
-                      icon: Icons.qr_code_rounded,
-                      iconColor: AppColors.emerald,
-                      title: 'My QR Code',
-                      subtitle: 'View or regenerate',
-                    ),
-                    _NavTile(
-                      icon: Icons.history_rounded,
-                      iconColor: const Color(0xFFFFCC00),
-                      title: 'Entry History',
-                      subtitle: 'Past 30 days',
-                    ),
-                  ],
-                ),
+                if (isAdmin)
+                  // ── Admin Tools — replaces resident Account items ──────────
+                  _SettingsGroup(
+                    title: 'Admin Tools',
+                    tiles: [
+                      _NavTile(
+                        icon: Icons.people_outline_rounded,
+                        iconColor: AppColors.electricBlue,
+                        title: 'Manage Residents',
+                        subtitle: 'View and edit all registrations',
+                      ),
+                      _NavTile(
+                        icon: Icons.bar_chart_rounded,
+                        iconColor: AppColors.emerald,
+                        title: 'Society Reports',
+                        subtitle: 'Occupancy & activity overview',
+                      ),
+                      _NavTile(
+                        icon: Icons.download_outlined,
+                        iconColor: const Color(0xFF7C4DFF),
+                        title: 'Export Data',
+                        subtitle: 'Download tenement records',
+                      ),
+                    ],
+                  )
+                else
+                  // ── Resident Account items ────────────────────────────────
+                  _SettingsGroup(
+                    title: 'Account',
+                    tiles: [
+                      _NavTile(
+                        icon: Icons.directions_car_outlined,
+                        iconColor: AppColors.electricBlue,
+                        title: 'My Vehicles',
+                        subtitle: '${resident.vehicles.length} registered',
+                      ),
+                      _NavTile(
+                        icon: Icons.qr_code_rounded,
+                        iconColor: AppColors.emerald,
+                        title: 'My QR Code',
+                        subtitle: 'View or regenerate',
+                      ),
+                      _NavTile(
+                        icon: Icons.history_rounded,
+                        iconColor: const Color(0xFFFFCC00),
+                        title: 'Entry History',
+                        subtitle: 'Past 30 days',
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 16),
                 _SettingsGroup(
                   title: 'Support',
@@ -210,8 +238,13 @@ class _ProfileCard extends StatelessWidget {
                     color: t.colorScheme.onSurface,
                   ),
                 ),
+                // Admin: show phone; Resident: show tower · home
                 Text(
-                  '${resident.tower} · ${resident.homeNumber}',
+                  resident.role == 'admin'
+                      ? resident.phone.isNotEmpty
+                          ? resident.phone
+                          : 'Society Admin'
+                      : '${resident.tower} · ${resident.homeNumber}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     color: c.textSecondary,
@@ -269,19 +302,7 @@ class _SettingsGroup extends StatelessWidget {
             border: Border.all(color: t.colorScheme.outline),
           ),
           child: Column(
-            children: tiles.asMap().entries.map((e) {
-              final isLast = e.key == tiles.length - 1;
-              return Column(
-                children: [
-                  e.value,
-                  if (!isLast)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Divider(height: 1, color: t.dividerColor),
-                    ),
-                ],
-              );
-            }).toList(),
+            children: tiles,
           ),
         ),
       ],

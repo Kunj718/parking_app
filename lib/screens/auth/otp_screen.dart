@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../state/app_state.dart';
 import 'profile_setup_screen.dart';
+import 'admin_profile_setup_screen.dart';
 import '../../navigation/main_navigation.dart';
 
 class OtpScreen extends StatefulWidget {
@@ -116,6 +117,13 @@ class _OtpScreenState extends State<OtpScreen>
           builder: (_) => MainNavigation(role: AppState.instance.selectedRole),
         ),
         (_) => false,
+      );
+    } else if (widget.role == 'admin') {
+      // Admin skips the 3-step resident flow — goes straight to name-only screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => AdminProfileSetupScreen(phone: widget.phone),
+        ),
       );
     } else {
       Navigator.of(context).pushReplacement(

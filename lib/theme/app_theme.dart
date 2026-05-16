@@ -117,6 +117,38 @@ class AppColorScheme extends ThemeExtension<AppColorScheme> {
     dangerDim: Color(0xFF2A0A10),
   );
 
+  // ── Admin light — shadcn/Tailwind CSS variable palette ───────────────────
+  // --background:#fff  --foreground:oklch(0.145)  --muted:#ececf0
+  // --muted-foreground:#717182  --border:rgba(0,0,0,0.1)  --radius:0.625rem
+  static const adminLight = AppColorScheme(
+    bg: Color(0xFFFFFFFF),           // --background: #ffffff
+    card: Color(0xFFFFFFFF),          // --card: #ffffff
+    cardElevated: Color(0xFFECECF0), // --muted: #ececf0
+    border: Color(0x1A000000),        // --border: rgba(0,0,0,0.1)  → alpha 0x1A = 10%
+    divider: Color(0xFFECECF0),       // --muted
+    textPrimary: Color(0xFF030213),   // --foreground ≈ oklch(0.145 0 0)
+    textSecondary: Color(0xFF717182), // --muted-foreground: #717182
+    textHint: Color(0xFFA0A0B2),      // between muted-fg and border
+    successDim: Color(0xFFECFDF5),
+    dangerDim: Color(0xFFFDE8EC),     // from --destructive: #d4183d
+  );
+
+  // ── Admin dark — shadcn dark CSS variable palette ────────────────────────
+  // --background:oklch(0.145)  --card:same  --border:oklch(0.269)
+  // --muted:oklch(0.269)  --muted-foreground:oklch(0.708)
+  static const adminDark = AppColorScheme(
+    bg: Color(0xFF111111),            // --background: oklch(0.145 0 0)
+    card: Color(0xFF111111),           // --card: same as background (flat dark)
+    cardElevated: Color(0xFF2A2A2A), // --muted/--secondary: oklch(0.269 0 0)
+    border: Color(0xFF2A2A2A),         // --border: oklch(0.269 0 0)
+    divider: Color(0xFF1D1D1D),        // subtly darker than card
+    textPrimary: Color(0xFFFAFAFA),   // --foreground: oklch(0.985 0 0)
+    textSecondary: Color(0xFFABABAB), // --muted-foreground: oklch(0.708 0 0)
+    textHint: Color(0xFF636363),       // oklch(0.439 0 0)
+    successDim: Color(0xFF0A2520),
+    dangerDim: Color(0xFF2A1010),
+  );
+
   @override
   AppColorScheme copyWith({
     Color? bg,
@@ -473,9 +505,218 @@ class AppTheme {
     );
   }
 
+  // ── Admin light theme — clean white panel (shadcn CSS vars) ──────────────
+  static ThemeData adminLight() {
+    final base = ThemeData.light(useMaterial3: true);
+    return base.copyWith(
+      scaffoldBackgroundColor: const Color(0xFFFFFFFF),
+      primaryColor: const Color(0xFF030213),
+      colorScheme: const ColorScheme.light(
+        primary: Color(0xFF030213),             // --primary: #030213
+        primaryContainer: Color(0xFFECECF0),   // --muted
+        secondary: Color(0xFFF1F0F8),           // --secondary: oklch(0.95 0.0058 264.53)
+        secondaryContainer: Color(0xFFECECF0),
+        surface: Color(0xFFFFFFFF),             // --card: #ffffff
+        onPrimary: Color(0xFFFFFFFF),           // --primary-foreground
+        onSecondary: Color(0xFF030213),
+        onSurface: Color(0xFF030213),           // --foreground ≈ oklch(0.145)
+        onSurfaceVariant: Color(0xFF717182),    // --muted-foreground: #717182
+        outline: Color(0x1A000000),             // --border: rgba(0,0,0,0.1)
+        outlineVariant: Color(0xFFECECF0),      // --muted
+        error: Color(0xFFD4183D),               // --destructive: #d4183d
+        onError: Color(0xFFFFFFFF),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFFFFFFFF),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness: Brightness.dark,
+        ),
+        iconTheme: IconThemeData(color: Color(0xFF030213)),
+      ),
+      // --radius: 0.625rem = 10px applied to all card shapes
+      cardTheme: CardThemeData(
+        color: Color(0xFFFFFFFF),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: Color(0x1A000000)),
+        ),
+        margin: EdgeInsets.zero,
+      ),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFFECECF0),
+        thickness: 1,
+        space: 0,
+      ),
+      // --input-background: #f3f3f5
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFFF3F3F5),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0x1A000000)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0x1A000000)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF030213), width: 1.5),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        hintStyle: _inter(14, FontWeight.w400, const Color(0xFF717182)),
+        labelStyle: _inter(14, FontWeight.w400, const Color(0xFF717182)),
+      ),
+      // --switch-background: #cbced4
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? Colors.white
+              : const Color(0xFFA0A0B2),
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? const Color(0xFF030213)
+              : const Color(0xFFCBCED4), // --switch-background
+        ),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+      ),
+      textTheme: _buildTextTheme(
+          const Color(0xFF030213), const Color(0xFF717182)),
+      extensions: const [AppColorScheme.adminLight],
+    );
+  }
+
+  // ── Admin dark theme — flat midnight neutral (shadcn dark CSS vars) ───────
+  static ThemeData adminDark() {
+    final base = ThemeData.dark(useMaterial3: true);
+    return base.copyWith(
+      scaffoldBackgroundColor: const Color(0xFF111111),
+      primaryColor: const Color(0xFFFAFAFA),
+      colorScheme: const ColorScheme.dark(
+        primary: Color(0xFFFAFAFA),             // --primary dark: oklch(0.985)
+        primaryContainer: Color(0xFF2A2A2A),
+        secondary: Color(0xFF2A2A2A),           // --secondary dark: oklch(0.269)
+        secondaryContainer: Color(0xFF2A2A2A),
+        surface: Color(0xFF111111),             // --card dark: same as background
+        onPrimary: Color(0xFF111111),
+        onSecondary: Color(0xFFFAFAFA),
+        onSurface: Color(0xFFFAFAFA),           // --foreground dark
+        onSurfaceVariant: Color(0xFFABABAB),    // --muted-foreground dark: oklch(0.708)
+        outline: Color(0xFF2A2A2A),             // --border dark: oklch(0.269)
+        outlineVariant: Color(0xFF1D1D1D),
+        error: Color(0xFFD4183D),
+        onError: Color(0xFFFFFFFF),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFF111111),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
+        iconTheme: IconThemeData(color: Color(0xFFFAFAFA)),
+      ),
+      cardTheme: CardThemeData(
+        // Card intentionally equals bg — separation via border only (flat design)
+        color: Color(0xFF111111),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: Color(0xFF2A2A2A)),
+        ),
+        margin: EdgeInsets.zero,
+      ),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFF1D1D1D),
+        thickness: 1,
+        space: 0,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFF1C1C1C),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF2A2A2A)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFF2A2A2A)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide:
+              const BorderSide(color: Color(0xFFFAFAFA), width: 1.5),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        hintStyle:
+            _inter(14, FontWeight.w400, const Color(0xFFABABAB)),
+        labelStyle:
+            _inter(14, FontWeight.w400, const Color(0xFFABABAB)),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? Colors.white
+              : const Color(0xFF636363),
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? const Color(0xFFFAFAFA)
+              : const Color(0xFF2A2A2A),
+        ),
+        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+      ),
+      textTheme: _buildTextTheme(
+          const Color(0xFFFAFAFA), const Color(0xFFABABAB)),
+      extensions: const [AppColorScheme.adminDark],
+    );
+  }
+
   static TextStyle _poppins(double size, FontWeight w, Color c) =>
       GoogleFonts.poppins(fontSize: size, fontWeight: w, color: c);
 
   static TextStyle _inter(double size, FontWeight w, Color c) =>
       GoogleFonts.inter(fontSize: size, fontWeight: w, color: c);
+}
+
+// ─── Admin theme scope wrapper ─────────────────────────────────────────────────
+// Drop this above any Scaffold to apply the admin palette for that screen and
+// all its descendants, while still respecting the global ThemeMode toggle.
+//
+// Usage:
+//   return AdminTheme(child: Builder(builder: (ctx) {
+//     final t = Theme.of(ctx);   // ← admin theme
+//     final c = ctx.colors;      // ← admin AppColorScheme
+//     return Scaffold(...);
+//   }));
+
+class AdminTheme extends StatelessWidget {
+  final Widget child;
+  const AdminTheme({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    // Honour the user's global dark/light toggle but apply admin colours.
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Theme(
+      data: isDark ? AppTheme.adminDark() : AppTheme.adminLight(),
+      child: child,
+    );
+  }
 }

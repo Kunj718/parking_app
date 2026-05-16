@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../screens/dashboard/dashboard_screen.dart';
+import '../screens/dashboard/admin_dashboard_screen.dart';
 import '../screens/scanner/scanner_screen.dart';
 import '../screens/settings/settings_screen.dart';
 
@@ -17,8 +18,13 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
+  bool get _isAdmin => widget.role == 'admin';
+
   late final List<_NavItem> _items = [
-    _NavItem(icon: Icons.grid_view_rounded, label: 'Dashboard'),
+    _NavItem(
+      icon: _isAdmin ? Icons.apartment_rounded : Icons.grid_view_rounded,
+      label: _isAdmin ? 'Tenements' : 'Dashboard',
+    ),
     _NavItem(icon: Icons.qr_code_scanner_rounded, label: 'Scanner'),
     _NavItem(icon: Icons.settings_outlined, label: 'Settings'),
   ];
@@ -31,7 +37,10 @@ class _MainNavigationState extends State<MainNavigation> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          DashboardScreen(role: widget.role),
+          // Admin → tenement grid dashboard  |  Resident → personal dashboard
+          _isAdmin
+              ? const AdminDashboardScreen()
+              : DashboardScreen(role: widget.role),
           const ScannerScreen(),
           const SettingsScreen(),
         ],
@@ -168,13 +177,10 @@ class _ScannerTab extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: selected
-                  ? AppColors.electricBlue
-                  : c.cardElevated,
+              color: selected ? AppColors.electricBlue : c.cardElevated,
               shape: BoxShape.circle,
               border: Border.all(
-                color:
-                    selected ? AppColors.electricBlue : c.border,
+                color: selected ? AppColors.electricBlue : c.border,
                 width: 1.5,
               ),
             ),
