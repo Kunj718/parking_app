@@ -30,45 +30,48 @@ class DashboardScreen extends StatelessWidget {
       // Theme.of(context).scaffoldBackgroundColor flips automatically:
       //   light → Color(0xFFF5F7FC)  |  dark → Color(0xFF0F172A)
       backgroundColor: t.scaffoldBackgroundColor,
-      body: CustomScrollView(
-        slivers: [
-          _AppBar(profile: profile),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                const SizedBox(height: 8),
-                _StatRow(vehicleCount: profile.vehicles.length),
-                const SizedBox(height: 20),
-                if (profile.vehicles.isNotEmpty)
-                  QuickActionCard(vehicle: profile.vehicles.first)
-                else
-                  const _NoVehicleBanner(),
-                const SizedBox(height: 24),
-                _SectionHeader(title: 'My Parking QR', action: 'Share'),
-                const SizedBox(height: 12),
-                QrCardWidget(profile: profile),
-                const SizedBox(height: 12),
-                QrCardActions(),
-                const SizedBox(height: 24),
-                if (profile.vehicles.isNotEmpty) ...[
-                  _SectionHeader(title: 'My Vehicles', action: 'Add'),
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _AppBar(profile: profile)),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  const SizedBox(height: 8),
+                  _StatRow(vehicleCount: profile.vehicles.length),
+                  const SizedBox(height: 20),
+                  if (profile.vehicles.isNotEmpty)
+                    QuickActionCard(vehicle: profile.vehicles.first)
+                  else
+                    const _NoVehicleBanner(),
+                  const SizedBox(height: 24),
+                  _SectionHeader(title: 'My Parking QR', action: 'Share'),
                   const SizedBox(height: 12),
-                  ...profile.vehicles.map(
-                    (v) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _VehicleTile(
-                        vehicle: v,
-                        isPrimary: profile.vehicles.indexOf(v) == 0,
+                  QrCardWidget(profile: profile),
+                  const SizedBox(height: 12),
+                  QrCardActions(),
+                  const SizedBox(height: 24),
+                  if (profile.vehicles.isNotEmpty) ...[
+                    _SectionHeader(title: 'My Vehicles', action: 'Add'),
+                    const SizedBox(height: 12),
+                    ...profile.vehicles.map(
+                      (v) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _VehicleTile(
+                          vehicle: v,
+                          isPrimary: profile.vehicles.indexOf(v) == 0,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-                const SizedBox(height: 100),
-              ]),
+                  ],
+                  const SizedBox(height: 100),
+                ]),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -79,57 +82,39 @@ class _AppBar extends StatelessWidget {
 
   const _AppBar({required this.profile});
 
-  String get _greeting {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning,';
-    if (hour < 17) return 'Good afternoon,';
-    return 'Good evening,';
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context);
     final c = context.colors;
-    return SliverAppBar(
-      // Matches scaffold so the app bar blends seamlessly on scroll
-      backgroundColor: t.scaffoldBackgroundColor,
-      floating: true,
-      pinned: false,
-      expandedHeight: 0,
-      toolbarHeight: 72,
-      flexibleSpace: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Row(
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _greeting,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: c.textSecondary,
-                  ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Welcome,',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: c.textSecondary,
                 ),
-                Text(
-                  profile.name.split(' ').first,
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    // Theme.of(context).colorScheme.onSurface:
-                    //   light → Color(0xFF1A2340)  |  dark → Color(0xFFEEF2FF)
-                    color: t.colorScheme.onSurface,
-                  ),
+              ),
+              Text(
+                profile.name.split(' ').first,
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: t.colorScheme.onSurface,
                 ),
-              ],
-            ),
-            const Spacer(),
-            _NotificationBell(),
-            const SizedBox(width: 10),
-            _Avatar(name: profile.name),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          _NotificationBell(),
+          const SizedBox(width: 10),
+          _Avatar(name: profile.name),
+        ],
       ),
     );
   }
