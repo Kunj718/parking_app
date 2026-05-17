@@ -39,8 +39,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return Scaffold(
       backgroundColor: t.scaffoldBackgroundColor,
-      body: CustomScrollView(
-        slivers: [
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
           SliverAppBar(
             backgroundColor: t.scaffoldBackgroundColor,
             floating: true,
@@ -55,7 +57,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.fromLTRB(
+                20, 0, 20, MediaQuery.of(context).padding.bottom + 16),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 _ProfileCard(
@@ -157,21 +160,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ],
                   ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 15),
                 _LogoutButton(),
-                const SizedBox(height: 40),
-                Center(
-                  child: Text(
-                    'Society Parking QR · v1.0.0',
-                    style: GoogleFonts.inter(
-                        fontSize: 11, color: c.textHint),
-                  ),
-                ),
-                const SizedBox(height: 100),
+                const SizedBox(height: 16),
               ]),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

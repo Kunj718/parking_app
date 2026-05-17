@@ -5,9 +5,9 @@ import '../../state/app_state.dart';
 import '../../navigation/main_navigation.dart';
 
 class AdminProfileSetupScreen extends StatefulWidget {
-  final String phone;
+  final String email;
 
-  const AdminProfileSetupScreen({super.key, required this.phone});
+  const AdminProfileSetupScreen({super.key, required this.email});
 
   @override
   State<AdminProfileSetupScreen> createState() =>
@@ -35,7 +35,7 @@ class _AdminProfileSetupScreenState extends State<AdminProfileSetupScreen> {
     final profile = UserProfile(
       id: 'ADM${DateTime.now().millisecondsSinceEpoch}',
       name: name,
-      phone: widget.phone,
+      phone: widget.email,   // stores email in phone field for admin
       homeNumber: '-',
       tower: '-',
       role: 'admin',
@@ -156,9 +156,9 @@ class _AdminProfileSetupScreenState extends State<AdminProfileSetupScreen> {
 
                   const SizedBox(height: 24),
 
-                  // ── Phone row (read-only) ─────────────────────────────────
+                  // ── Email row (read-only) ─────────────────────────────────
                   Text(
-                    'MOBILE NUMBER',
+                    'EMAIL ADDRESS',
                     style: GoogleFonts.poppins(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
@@ -177,18 +177,20 @@ class _AdminProfileSetupScreenState extends State<AdminProfileSetupScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.phone_android_rounded,
+                        Icon(Icons.email_outlined,
                             color: c.textHint, size: 20),
                         const SizedBox(width: 12),
-                        Text(
-                          widget.phone,
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            color: c.textSecondary,
-                            letterSpacing: 1,
+                        Expanded(
+                          child: Text(
+                            widget.email,
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              color: c.textSecondary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 3),

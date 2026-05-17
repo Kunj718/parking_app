@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import 'phone_auth_screen.dart';
+import 'admin_login_screen.dart';
 
 // ── Brand constants used inside the always-white role cards ───────────────────
 // Cards are white in both light and dark modes (React design intent), so
@@ -14,9 +15,15 @@ class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
 
   void _navigate(BuildContext context, String role) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => PhoneAuthScreen(role: role)),
-    );
+    if (role == 'admin') {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+      );
+    } else {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => PhoneAuthScreen(role: role)),
+      );
+    }
   }
 
   @override

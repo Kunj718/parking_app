@@ -416,11 +416,11 @@ class _MyQrScreen extends StatelessWidget {
                         color: t.colorScheme.onSurface,
                       ),
                     ),
-                    Text(
-                      'Show this at the gate to verify your entry.',
-                      style: GoogleFonts.inter(
-                          fontSize: 13, color: c.textSecondary),
-                    ),
+                    // Text(
+                    //   'Show this at the gate to verify your entry.',
+                    //   style: GoogleFonts.inter(
+                    //       fontSize: 13, color: c.textSecondary),
+                    // ),
                   ],
                 ),
               ),

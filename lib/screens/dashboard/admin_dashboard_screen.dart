@@ -75,13 +75,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     color: t.colorScheme.onSurface,
                                   ),
                                 ),
-                                Text(
-                                  'Tenement Management',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    color: c.textSecondary,
-                                  ),
-                                ),
                               ],
                             ),
                           ),

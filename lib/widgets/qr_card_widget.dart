@@ -109,7 +109,8 @@ class QrCardWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: c.cardElevated,
+        // Always white so QR modules are visible in both light and dark mode
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: c.border),
       ),
@@ -117,13 +118,14 @@ class QrCardWidget extends StatelessWidget {
         data: profile.qrData,
         version: QrVersions.auto,
         size: 172,
+        backgroundColor: Colors.white,
         eyeStyle: const QrEyeStyle(
           eyeShape: QrEyeShape.square,
-          color: AppColors.deepNavy,
+          color: Color(0xFF0A1628), // deep navy — always readable on white
         ),
         dataModuleStyle: const QrDataModuleStyle(
           dataModuleShape: QrDataModuleShape.square,
-          color: AppColors.navyMid,
+          color: Color(0xFF0A1628),
         ),
         embeddedImage: null,
       ),
