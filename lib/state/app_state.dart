@@ -68,6 +68,7 @@ class UserProfile {
 
   UserProfile copyWith({
     String? name,
+    String? phone,
     String? homeNumber,
     String? tower,
     String? tenamentNo,
@@ -77,7 +78,7 @@ class UserProfile {
     return UserProfile(
       id: id,
       name: name ?? this.name,
-      phone: phone,
+      phone: phone ?? this.phone,
       homeNumber: homeNumber ?? this.homeNumber,
       tower: tower ?? this.tower,
       tenamentNo: tenamentNo ?? this.tenamentNo,

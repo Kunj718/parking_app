@@ -66,7 +66,11 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 100),
+                  // Extra bottom clearance so the last item doesn't hide
+                  // behind the floating nav bar (≈ 53 px bar + 16 px margin).
+                  SizedBox(
+                    height: 10 + MediaQuery.of(context).padding.bottom,
+                  ),
                 ]),
               ),
             ),
@@ -211,15 +215,6 @@ class _StatRow extends StatelessWidget {
             value: '14',
             icon: Icons.qr_code_rounded,
             color: AppColors.emerald,
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _StatCard(
-            label: 'Entry Today',
-            value: '27',
-            icon: Icons.login_rounded,
-            color: const Color(0xFF7C4DFF),
           ),
         ),
       ],

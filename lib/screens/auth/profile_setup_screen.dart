@@ -43,11 +43,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _emailController = TextEditingController();
 
   // Step 2 — Society Details
-  String _selectedTower = 'Tower A';
+  // Starts null so the address field stays hidden until user picks an option.
+  String? _selectedTower;
   final _homeNumberController = TextEditingController();
   final _tenamentController = TextEditingController();
   final _parkingSlotController = TextEditingController();
-  final _towers = ['Tower A', 'Tower B', 'Tower C', 'Tower D', 'Wing 1', 'Wing 2', 'Tenement'];
+  final _towers = ['Tower', 'Wing', 'Tenement'];
 
   // Step 3 — Vehicles (supports multiple)
   bool _hasVehicle = false;
@@ -133,15 +134,20 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       }
     }
 
+    final selectedTower = _selectedTower ?? 'Tower A';
+    final isTenement = selectedTower == 'Tenement';
+
     final profile = UserProfile(
       id: 'RES${DateTime.now().millisecondsSinceEpoch}',
       name: name,
       phone: widget.phone,
-      homeNumber: homeNumber,
-      tower: _selectedTower,
-      tenamentNo: _tenamentController.text.trim().isEmpty
-          ? null
-          : _tenamentController.text.trim(),
+      homeNumber: isTenement ? '-' : homeNumber,
+      tower: selectedTower,
+      tenamentNo: isTenement
+          ? (_tenamentController.text.trim().isEmpty
+              ? null
+              : _tenamentController.text.trim())
+          : null,
       email: _emailController.text.trim().isEmpty
           ? null
           : _emailController.text.trim(),
@@ -200,7 +206,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     homeNumberController: _homeNumberController,
                     tenamentController: _tenamentController,
                     parkingSlotController: _parkingSlotController,
-                    onTowerChanged: (v) => setState(() => _selectedTower = v),
+                    onTowerChanged: (v) {
+                    setState(() {
+                      _selectedTower = v;
+                      // Clear the address field when the type changes
+                      _homeNumberController.clear();
+                      _tenamentController.clear();
+                    });
+                  },
                   ),
                   _Step3Vehicle(
                     hasVehicle: _hasVehicle,
@@ -260,10 +273,11 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // QR-generated step — hide the entire top bar, the screen handles its own layout
+    if (currentStep >= totalSteps) return const SizedBox.shrink();
+
     final c = context.colors;
-    final progress = currentStep >= totalSteps
-        ? 1.0
-        : (currentStep + 1) / totalSteps;
+    final progress = (currentStep + 1) / totalSteps;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -425,7 +439,7 @@ class _Step1PersonalInfo extends StatelessWidget {
 // ─── Step 2: Society Details ──────────────────────────────────────────────────
 
 class _Step2SocietyDetails extends StatelessWidget {
-  final String selectedTower;
+  final String? selectedTower;
   final List<String> towers;
   final TextEditingController homeNumberController;
   final TextEditingController tenamentController;
@@ -441,7 +455,37 @@ class _Step2SocietyDetails extends StatelessWidget {
     required this.onTowerChanged,
   });
 
+  bool get _hasSelection => selectedTower != null;
   bool get _isTenement => selectedTower == 'Tenement';
+  bool get _isWing => selectedTower?.startsWith('Wing') ?? false;
+
+  // ── Dynamic field properties based on selection type ─────────────────────
+
+  String get _fieldLabel {
+    if (_isTenement) return 'Tenement No.';
+    if (_isWing) return 'Flat Number';
+    return 'Flat / Unit Number';
+  }
+
+  String get _fieldSubtitle {
+    if (_isTenement) return 'Survey / tenement number from your agreement or society records';
+    if (_isWing) return 'Your flat or unit number in ${selectedTower ?? ''}';
+    return 'Your flat, unit, or house number in ${selectedTower ?? ''}';
+  }
+
+  String get _fieldHint {
+    if (_isTenement) return 'e.g. T-1234 or 56/A (optional)';
+    if (_isWing) return 'e.g. 304, Flat 12, W1-304';
+    return 'e.g. 704, B-12, House 5';
+  }
+
+  IconData get _fieldIcon {
+    if (_isTenement) return Icons.tag_rounded;
+    return Icons.home_outlined;
+  }
+
+  TextEditingController get _fieldController =>
+      _isTenement ? tenamentController : homeNumberController;
 
   @override
   Widget build(BuildContext context) {
@@ -471,14 +515,18 @@ class _Step2SocietyDetails extends StatelessWidget {
           ),
           const SizedBox(height: 32),
 
-          // ── Tower / Wing / Tenement ─────────────────────────────────────
+          // ── Tower / Wing / Tenement dropdown ───────────────────────────
           _FormLabel(label: 'Tower / Wing / Tenement'),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
               color: c.card,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: c.border),
+              border: Border.all(
+                color: _hasSelection
+                    ? AppColors.electricBlue.withValues(alpha: 0.5)
+                    : c.border,
+              ),
             ),
             child: DropdownButtonHideUnderline(
               child: ButtonTheme(
@@ -490,8 +538,24 @@ class _Step2SocietyDetails extends StatelessWidget {
                   dropdownColor: c.card,
                   icon: Icon(Icons.keyboard_arrow_down_rounded,
                       color: c.textSecondary),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 2),
+                  // Placeholder shown when nothing is selected yet
+                  hint: Row(
+                    children: [
+                      Icon(Icons.apartment_outlined,
+                          color: c.textHint, size: 20),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Select Any One',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                          color: c.textHint,
+                        ),
+                      ),
+                    ],
+                  ),
                   items: towers
                       .map((t) => DropdownMenuItem(
                             value: t,
@@ -512,103 +576,114 @@ class _Step2SocietyDetails extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
 
-          // ── Conditional field ───────────────────────────────────────────
-          // Tenement selected → show Tenement No. field
-          // Tower / Wing selected → show Home Number field
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            transitionBuilder: (child, animation) => FadeTransition(
-              opacity: animation,
-              child: SizeTransition(
-                sizeFactor: animation,
-                axisAlignment: -1,
-                child: child,
-              ),
-            ),
-            child: _isTenement
+          // ── Address field — hidden until a type is selected ─────────────
+          AnimatedSize(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeInOut,
+            child: _hasSelection
                 ? Column(
-                    key: const ValueKey('tenement_field'),
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _FormLabel(label: 'Tenement No.'),
+                      const SizedBox(height: 20),
+                      _FormLabel(label: _fieldLabel),
                       const SizedBox(height: 4),
                       Text(
-                        'Survey / tenement number from your agreement or society records',
+                        _fieldSubtitle,
                         style: GoogleFonts.inter(
                             fontSize: 11, color: c.textHint),
                       ),
                       const SizedBox(height: 8),
                       _StyledTextField(
-                        controller: tenamentController,
-                        hint: 'e.g. T-1234 or 56/A (optional)',
-                        icon: Icons.tag_rounded,
+                        key: ValueKey(selectedTower),
+                        controller: _fieldController,
+                        hint: _fieldHint,
+                        icon: _fieldIcon,
                         textCapitalization: TextCapitalization.characters,
                       ),
                       const SizedBox(height: 20),
+
+                      // ── Parking Slot ──────────────────────────────────
+                      _FormLabel(label: 'Parking Slot'),
+                      const SizedBox(height: 8),
+                      _StyledTextField(
+                        controller: parkingSlotController,
+                        hint: 'e.g. P1-045 (optional)',
+                        icon: Icons.local_parking_rounded,
+                        textCapitalization: TextCapitalization.characters,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // ── Info banner ───────────────────────────────────
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.electricBlue
+                              .withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: AppColors.electricBlue
+                                  .withValues(alpha: 0.2)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline_rounded,
+                                color: AppColors.electricBlue, size: 16),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Your details are encoded in your QR. Guards see this when they scan.',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: AppColors.electricBlueLight,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   )
-                : Column(
-                    key: const ValueKey('home_field'),
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _FormLabel(label: 'Home Number'),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Flat no., house no., unit no. — whatever applies to you',
-                        style: GoogleFonts.inter(
-                            fontSize: 11, color: c.textHint),
-                      ),
-                      const SizedBox(height: 8),
-                      _StyledTextField(
-                        controller: homeNumberController,
-                        hint: 'e.g. 704, B-12, House 5',
-                        icon: Icons.home_outlined,
-                        textCapitalization: TextCapitalization.characters,
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
+                : const SizedBox.shrink(),
           ),
 
-          // ── Parking Slot (always visible) ───────────────────────────────
-          _FormLabel(label: 'Parking Slot'),
-          const SizedBox(height: 8),
-          _StyledTextField(
-            controller: parkingSlotController,
-            hint: 'e.g. P1-045 (optional)',
-            icon: Icons.local_parking_rounded,
-            textCapitalization: TextCapitalization.characters,
-          ),
-          const SizedBox(height: 16),
-
-          // ── Info banner ─────────────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.electricBlue.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                  color: AppColors.electricBlue.withValues(alpha: 0.2)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.info_outline_rounded,
-                    color: AppColors.electricBlue, size: 16),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Your details are encoded in your QR. Guards see this when they scan.',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: AppColors.electricBlueLight,
-                      height: 1.5,
+          // ── Nudge shown while nothing is selected ───────────────────────
+          AnimatedSize(
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeInOut,
+            child: !_hasSelection
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: c.card,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: c.border,
+                            style: BorderStyle.solid),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.touch_app_rounded,
+                              color: c.textHint, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Select your building type above to fill in your unit details.',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: c.textSecondary,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ),
-              ],
-            ),
+                  )
+                : const SizedBox.shrink(),
           ),
         ],
       ),
@@ -1026,7 +1101,7 @@ class _Step4QrGenerated extends StatelessWidget {
 
     final c = context.colors;
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
       child: Column(
         children: [
           Container(
@@ -1066,7 +1141,7 @@ class _Step4QrGenerated extends StatelessWidget {
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 10),
           // QR Card
           Container(
             padding: const EdgeInsets.all(20),
@@ -1234,7 +1309,6 @@ class _Step4QrGenerated extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 40),
         ],
       ),
     );
@@ -1338,6 +1412,7 @@ class _StyledTextField extends StatelessWidget {
   final TextStyle? style;
 
   const _StyledTextField({
+    super.key,
     required this.controller,
     required this.hint,
     required this.icon,
