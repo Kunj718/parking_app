@@ -116,6 +116,26 @@ class ScannedProfile {
   bool get hasTenament => tenamentNo != null && tenamentNo!.isNotEmpty;
 }
 
+// ─── Guest Pass ───────────────────────────────────────────────────────────────
+
+class GuestPass {
+  final String vehicleType;   // 'car' | 'bike'
+  final String model;
+  final String plateNumber;
+  final int duration;
+  final String unit;          // 'HR' | 'Day' | 'Week' | 'Month'
+  final DateTime issuedAt;
+
+  const GuestPass({
+    required this.vehicleType,
+    required this.model,
+    required this.plateNumber,
+    required this.duration,
+    required this.unit,
+    required this.issuedAt,
+  });
+}
+
 // ─── Global app state ─────────────────────────────────────────────────────────
 
 class AppState {
@@ -126,6 +146,7 @@ class AppState {
   bool isLoggedIn = false;
   String selectedRole = 'resident';
   UserProfile? currentUser;
+  final List<GuestPass> guestPasses = [];
 
   // ── Reactive theme mode ───────────────────────────────────────────────────
   // ValueNotifier<ThemeMode> is lightweight — no ChangeNotifier overhead.

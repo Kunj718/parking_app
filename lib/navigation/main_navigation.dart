@@ -7,6 +7,7 @@ import '../screens/dashboard/admin_dashboard_screen.dart';
 import '../screens/scanner/scanner_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../widgets/qr_card_widget.dart';
+import '../screens/vehicles/add_vehicle_screen.dart';
 
 // ── Nav item descriptor ────────────────────────────────────────────────────────
 
@@ -224,84 +225,363 @@ class _ScannerTab extends StatelessWidget {
 
 // ── Resident: My Vehicles screen ───────────────────────────────────────────────
 
-class _MyVehiclesScreen extends StatelessWidget {
+class _MyVehiclesScreen extends StatefulWidget {
   const _MyVehiclesScreen();
 
   @override
+  State<_MyVehiclesScreen> createState() => _MyVehiclesScreenState();
+}
+
+class _MyVehiclesScreenState extends State<_MyVehiclesScreen> {
+  bool _historyExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
-    final t        = Theme.of(context);
-    final c        = context.colors;
-    final vehicles = AppState.instance.currentUser?.vehicles ?? [];
+    final t           = Theme.of(context);
+    final c           = context.colors;
+    final vehicles    = AppState.instance.currentUser?.vehicles ?? [];
+    final guestPasses = AppState.instance.guestPasses;
 
     return Scaffold(
       backgroundColor: t.scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'My Vehicles',
-                    style: GoogleFonts.poppins(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: t.colorScheme.onSurface,
+        child: CustomScrollView(
+          slivers: [
+            // ── Header ──────────────────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'My Vehicles',
+                          style: GoogleFonts.poppins(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: t.colorScheme.onSurface,
+                          ),
+                        ),
+                        Text(
+                          '${vehicles.length} registered',
+                          style: GoogleFonts.inter(
+                              fontSize: 13, color: c.textSecondary),
+                        ),
+                      ],
                     ),
-                  ),
-                  Text(
-                    '${vehicles.length} registered',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: c.textSecondary,
-                    ),
-                  ),
-                ],
+                    const Spacer(),
+                    // ── Add vehicle button (only when vehicles exist) ────────
+                    if (vehicles.isNotEmpty)
+                      GestureDetector(
+                        onTap: () async {
+                          final added = await Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                                builder: (_) => const AddVehicleScreen()),
+                          );
+                          if (added == true) setState(() {});
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: AppColors.electricBlue
+                                .withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: AppColors.electricBlue
+                                  .withValues(alpha: 0.25),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.add_rounded,
+                                  color: AppColors.electricBlue, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Add',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.electricBlue,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
 
-            Expanded(
-              child: vehicles.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.directions_car_outlined,
-                              color: c.textHint, size: 48),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No vehicles linked',
+            // ── Registered vehicles ──────────────────────────────────────────
+            if (vehicles.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: _RegisterVehicleCta(
+                    onAdded: () => setState(() {}),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (_, i) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _VehicleTile(
+                          vehicle: vehicles[i], isPrimary: i == 0),
+                    ),
+                    childCount: vehicles.length,
+                  ),
+                ),
+              ),
+
+            // ── Guest History header ─────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+                child: GestureDetector(
+                  onTap: () =>
+                      setState(() => _historyExpanded = !_historyExpanded),
+                  behavior: HitTestBehavior.opaque,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.person_add_alt_1_outlined,
+                            color: Color(0xFFF59E0B), size: 15),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Guest History',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: t.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (guestPasses.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${guestPasses.length}',
                             style: GoogleFonts.poppins(
-                              fontSize: 15,
-                              color: c.textSecondary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFFF59E0B),
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Add a vehicle in Account settings.',
-                            style: GoogleFonts.inter(
-                                fontSize: 13, color: c.textHint),
+                        ),
+                      const Spacer(),
+                      AnimatedRotation(
+                        turns: _historyExpanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 220),
+                        child: Icon(Icons.keyboard_arrow_down_rounded,
+                            color: c.textHint, size: 22),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // ── Guest History list ───────────────────────────────────────────
+            if (_historyExpanded)
+              guestPasses.isEmpty
+                  ? SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: t.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: t.colorScheme.outline),
                           ),
-                        ],
+                          child: Center(
+                            child: Text(
+                              'No guest passes issued yet.',
+                              style: GoogleFonts.inter(
+                                  fontSize: 13, color: c.textHint),
+                            ),
+                          ),
+                        ),
                       ),
                     )
-                  : ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
-                      itemCount: vehicles.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (_, i) => _VehicleTile(
-                        vehicle: vehicles[i],
-                        isPrimary: i == 0,
+                  : SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (_, i) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _GuestPassTile(pass: guestPasses[i]),
+                          ),
+                          childCount: guestPasses.length,
+                        ),
                       ),
                     ),
+
+            // Bottom clearance
+            SliverToBoxAdapter(
+              child: SizedBox(
+                  height: 16 + MediaQuery.of(context).padding.bottom),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Guest pass history tile ────────────────────────────────────────────────────
+
+class _GuestPassTile extends StatelessWidget {
+  final GuestPass pass;
+  const _GuestPassTile({required this.pass});
+
+  @override
+  Widget build(BuildContext context) {
+    final t      = Theme.of(context);
+    final c      = context.colors;
+    final isBike = pass.vehicleType == 'bike';
+    const amber  = Color(0xFFF59E0B);
+
+    // Format date & time
+    final now = pass.issuedAt;
+    final date =
+        '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
+    final hour   = now.hour % 12 == 0 ? 12 : now.hour % 12;
+    final minute = now.minute.toString().padLeft(2, '0');
+    final ampm   = now.hour >= 12 ? 'PM' : 'AM';
+    final time   = '$hour:$minute $ampm';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: t.colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: t.colorScheme.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top row — icon + model + duration badge
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: amber.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  isBike
+                      ? Icons.two_wheeler_rounded
+                      : Icons.directions_car_outlined,
+                  color: amber,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      pass.model,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: t.colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      pass.plateNumber,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: c.textSecondary,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Duration badge
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: amber.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: amber.withValues(alpha: 0.30)),
+                ),
+                child: Text(
+                  '${pass.duration} ${pass.unit}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: amber,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // Bottom row — type chip + date/time
+          Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: c.cardElevated,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: t.colorScheme.outline),
+                ),
+                child: Text(
+                  isBike ? 'Bike' : 'Car',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: c.textSecondary,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Icon(Icons.calendar_today_outlined,
+                  color: c.textHint, size: 12),
+              const SizedBox(width: 4),
+              Text(
+                '$date  $time',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: c.textHint,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -381,6 +661,111 @@ class _VehicleTile extends StatelessWidget {
           Icon(Icons.chevron_right_rounded, color: c.textHint, size: 18),
         ],
       ),
+    );
+  }
+}
+
+// ── Register vehicle CTA (shown when user has no vehicles) ────────────────────
+
+class _RegisterVehicleCta extends StatelessWidget {
+  final VoidCallback onAdded;
+  const _RegisterVehicleCta({required this.onAdded});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context);
+    final c = context.colors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Large CTA card
+        GestureDetector(
+          onTap: () async {
+            final added = await Navigator.of(context).push<bool>(
+              MaterialPageRoute(builder: (_) => const AddVehicleScreen()),
+            );
+            if (added == true) onAdded();
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: t.colorScheme.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                  color: AppColors.electricBlue.withValues(alpha: 0.30)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.electricBlue.withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                        color: AppColors.electricBlue.withValues(alpha: 0.22)),
+                  ),
+                  child: const Icon(Icons.add_rounded,
+                      color: AppColors.electricBlue, size: 32),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Register Your Vehicle',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: t.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Add your car or bike to link it\nto your parking QR pass.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: c.textSecondary,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                        colors: AppColors.blueGradient),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.electricBlue.withValues(alpha: 0.30),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.directions_car_outlined,
+                          color: Colors.white, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Add Vehicle',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
